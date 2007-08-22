@@ -52,6 +52,10 @@ fi
 #define code version number
 echo "#define SVNVERSION \"`svnversion .`\""  > version.h
 
+if [ "$CC" = "" ]; then
+    CC=gcc
+fi
+
 modulePath="-I ../database -I ../hash"
 
 datadraw $modulePath -h ../include ../hash/Hash.dd
@@ -71,7 +75,8 @@ flex -f -Pvr -o../verilog/vrscan.c ../verilog/vrscan.l
 CFLAGS="-g -Wall -W -Wno-unused-parameter -Wno-unused-function -DDD_DEBUG -I../include -I../spice -I/usr/include/tcl8.4"
 LIBS="-lpopt -ltcl8.4 -lddutil"
 
-echo "CFLAGS=$CFLAGS
+echo "CC=$CC
+CFLAGS=$CFLAGS
 LIBS=$LIBS
 " > makefile
 
@@ -86,7 +91,7 @@ echo '
 TARGET='../../bin/gnetman'
 
 $(TARGET): $(OBJECTS)
-	gcc $(CFLAGS) $(OBJECTS) $(LIBS) -o $(TARGET)
+	$(CC) $(CFLAGS) $(OBJECTS) $(LIBS) -o $(TARGET)
 
 clean:
 	rm -f $(OBJECTS)
@@ -136,9 +141,9 @@ clean:
 for sourceFile in $SOURCE; do
     objFile="obj/`basename $sourceFile | sed 's/\.c$/.o/'`"
     echo "$objFile: $sourceFile
-	gcc -c \$(CFLAGS) $sourceFile -o $objFile
+	\$(CC) -c \$(CFLAGS) $sourceFile -o $objFile
 " >> makefile
 done
 
-gcc -M $CFLAGS $SOURCE | sed 's/^\([^ ].*\.o:\)/obj\/\1/' >> makefile
+$CC -M $CFLAGS $SOURCE | sed 's/^\([^ ].*\.o:\)/obj\/\1/' >> makefile
 
