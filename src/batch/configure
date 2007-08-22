@@ -49,6 +49,9 @@ if [ ! -d ../../bin ]; then
     mkdir ../../bin
 fi
 
+#define code version number
+echo "#define SVNVERSION \"`svnversion .`\""  > version.h
+
 modulePath="-I ../database -I ../hash"
 
 datadraw $modulePath -h ../include ../hash/Hash.dd

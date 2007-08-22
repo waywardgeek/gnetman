@@ -108,7 +108,7 @@ static void addNetlistToTable(
 {
     htStartHashKey();
     htHashUint32(utSym2Index(value));
-    htHtblAdd(htbl, (uint32)(void *)netlist);
+    htHtblAdd(htbl, dbNetlist2Index(netlist));
 }
 
 static utSym geValue;
@@ -118,7 +118,7 @@ static utSym geValue;
 static bool matchNetlist(
     htEntry entry)
 {
-    dbNetlist netlist = (dbNetlist)(void *)htEntryGetData(entry);
+    dbNetlist netlist = dbIndex2Netlist(htEntryGetData(entry));
     utSym valueSym = dbFindAttrValue(dbNetlistGetAttr(netlist), geValueSym);
 
     if(valueSym == geValue) {
@@ -143,7 +143,7 @@ static dbNetlist findNetlistInTable(
     if(entry == htEntryNull) {
         return dbNetlistNull;
     }
-    return (dbNetlist)(void *)htEntryGetData(entry);
+    return dbIndex2Netlist(htEntryGetData(entry));
 }
 
 /*--------------------------------------------------------------------------------------------------

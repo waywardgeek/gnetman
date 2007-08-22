@@ -28,7 +28,7 @@
 #include "schext.h"
 #include "vrext.h"
 #include "pcbext.h"
-#include "../../config.h"
+#include "version.h"
 
 FILE *baFile;
 
@@ -324,7 +324,7 @@ int main(
     char *exeName;
 
     utStart();
-    utSetVersion(VERSION);
+    utSetVersion(utSprintf("gnetman_%u", argv[0], SVNVERSION));
     exeName = utReplaceSuffix(utBaseName(argv[0]), "");
     utInitLogFile(utSprintf("%s.log", exeName));
     baExecutableName = utNewA(char, strlen(exeName) + 1);
