@@ -194,15 +194,13 @@ Compilation:
 
 Ubuntu Linux:
 
-To compile this project on RedHat Linux, do the following:
+To compile this project on Ubuntu, do the following:
 
+    cd src/batch
     ./configure
     make
 
-The result of make is a src/gnetman.  This can be copied  to /usr/bin with
-the command (executed as root)
-
-    make install
+The result of make is a bin/gnetman program.
 
 Other Linux:
 
