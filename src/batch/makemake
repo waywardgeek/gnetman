@@ -1,0 +1,141 @@
+#!/bin/sh
+
+SOURCE="../util/utbox.c
+../util/utvalue.c
+../spice/cirdatabase.c
+../spice/cirscan.c
+../spice/cirwrite.c
+../spice/cirparse.c
+../spice/cirread.c
+../attrproc/attrproc.c
+../attrproc/atparse.c
+../attrproc/atscan.c
+../attrproc/atdatabase.c
+../tcl/tclfunc.c
+../tcl/tclfunc_wrap.c
+../tcl/tclwrap.c
+../sch/schbuild.c
+../sch/schdatabase.c
+../sch/schgensym.c
+../sch/schpost.c
+../sch/schmain.c
+../sch/schnetlist.c
+../sch/schread.c
+../sch/schshort.c
+../sch/schwrite.c
+../database/dbbuild.c
+../database/dbdatabase.c
+../database/dbmain.c
+../database/dbnetlist.c
+../database/dbquery.c
+../database/dbshort.c
+../hash/hthash.c
+../hash/htdatabase.c
+../generate/generate.c
+../verilog/vrdatabase.c
+../verilog/vrparse.c
+../verilog/vrread.c
+../verilog/vrscan.c
+../verilog/vrwrite.c
+../pcb/pcbread.c
+../pcb/pcbwrite.c
+bamain.c"
+
+if [ ! -d obj ]; then
+    mkdir obj
+fi
+
+if [ ! -d ../../bin ]; then
+    mkdir ../../bin
+fi
+
+modulePath="-I ../database -I ../hash"
+
+datadraw $modulePath -h ../include ../hash/Hash.dd
+datadraw $modulePath -h ../include ../database/Database.dd
+datadraw $modulePath ../attrproc/AttrProc.dd
+datadraw $modulePath ../spice/SpiceNetlist.dd
+datadraw $modulePath ../sch/Schematics.dd
+datadraw $modulePath ../verilog/Verilog.dd
+bison -d -p cir -o ../spice/cirparse.c -b cir ../spice/cirparse.y
+flex -f -i -Pcir -o../spice/cirscan.c ../spice/cirscan.l
+bison -d -p at -o ../attrproc/atparse.c -b at ../attrproc/atparse.y
+flex -f -i -Pat -o../attrproc/atscan.c ../attrproc/atscan.l
+bison -d -p vr -o ../verilog/vrparse.c -b vr ../verilog/vrparse.y
+flex -f -Pvr -o../verilog/vrscan.c ../verilog/vrscan.l
+/usr/local/bin/swig -tcl8 ../tcl/tclfunc.i
+
+CFLAGS="-g -Wall -W -Wno-unused-parameter -Wno-unused-function -DDD_DEBUG -I../include -I../spice -I/usr/include/tcl8.4"
+LIBS="-lpopt -ltcl8.4 -lddutil"
+
+echo "CFLAGS=$CFLAGS
+LIBS=$LIBS
+" > makefile
+
+echo "OBJECTS=\\" >> makefile
+for sourceFile in $SOURCE; do
+    objFile="obj/`basename $sourceFile | sed 's/\.c$/.o/'`"
+    echo "$objFile\\" >> makefile
+done
+
+echo '
+
+TARGET='../../bin/gnetman'
+
+$(TARGET): $(OBJECTS)
+	gcc $(CFLAGS) $(OBJECTS) $(LIBS) -o $(TARGET)
+
+clean:
+	rm -f $(OBJECTS)
+
+# Special targets
+../spice/cirparse.c ../spice/cirparse.h: ../spice/cirparse.y ../spice/cir.h
+	bison -d -p cir -o ../spice/cirparse.c -b cir ../spice/cirparse.y
+
+../spice/cirscan.c: ../spice/cirscan.l ../spice/cirparse.h ../spice/cir.h
+	flex -f -i -Pcir -o../spice/cirscan.c ../spice/cirscan.l
+
+../attrproc/atparse.c ../attrproc/atparse.h: ../attrproc/atparse.y ../attrproc/at.h
+	bison -d -p at -o ../attrproc/atparse.c -b at ../attrproc/atparse.y
+
+../attrproc/atscan.c: ../attrproc/atscan.l ../attrproc/atparse.h ../attrproc/at.h
+	flex -f -i -Pat -o../attrproc/atscan.c ../attrproc/atscan.l
+
+../verilog/vrparse.c ../verilog/vrparse.h: ../verilog/vrparse.y ../verilog/vr.h
+	bison -d -p vr -o ../verilog/vrparse.c -b vr ../verilog/vrparse.y
+
+../verilog/vrscan.c: ../verilog/vrscan.l ../verilog/vrparse.h ../verilog/vr.h
+	flex -f -Pvr -o../verilog/vrscan.c ../verilog/vrscan.l
+
+../tcl/tclfunc_wrap.c: ../tcl/tclfunc.i ../tcl/tclfunc.h
+	/usr/local/bin/swig -tcl8 ../tcl/tclfunc.i
+
+../include/dbdatabase.h ../database/dbdatabase.c: ../database/Database.dd
+	datadraw $modulePath -h ../include ../database/Database
+
+../include/htdatabase.h ../hash/htdatabase.c: ../hash/Hash.dd
+	datadraw $modulePath -h ../include ../hash/Hash
+
+../attrproc/atdatabase.h ../attrproc/atdatabase.c: ../attrproc/AttrProc.dd
+	datadraw $modulePath ../attrproc/AttrProc
+
+../spice/cirdatabase.h ../spice/cirdatabase.c: ../spice/SpiceNetlist.dd
+	datadraw $modulePath ../spice/SpiceNetlist
+
+../verilog/vrdatabase.h ../verilog/vrdatabase.c: ../verilog/Verilog.dd
+	datadraw $modulePath ../verilog/Verilog
+
+../sch/schdatabase.h ../sch/schdatabase.c: ../sch/Schematics.dd
+	datadraw $modulePath ../sch/Schematics
+
+' >> makefile
+
+for sourceFile in $SOURCE; do
+    objFile="obj/`basename $sourceFile | sed 's/\.c$/.o/'`"
+    echo "$objFile: $sourceFile
+	gcc -c \$(CFLAGS) $sourceFile -o $objFile
+" >> makefile
+done
+
+gcc -M $CFLAGS $SOURCE | sed 's/^\([^ ].*\.o:\)/obj\/\1/' >> makefile
+

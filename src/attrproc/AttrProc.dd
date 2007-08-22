@@ -1,0 +1,31 @@
+module AttrProc at
+
+import Database
+
+class Mport:Database
+    double CurrentSum
+    double Sum
+
+class Context
+
+class Attr
+    double Value
+
+class Port:Database
+    double Sum
+
+class Root
+
+class Device
+
+class Pin
+
+// Context relationships
+relationship Context Attr hashed mandatory
+
+// Root relationships
+relationship Root Device hashed mandatory
+
+// Device relationships
+relationship Device Pin hashed mandatory
+

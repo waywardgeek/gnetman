@@ -1,0 +1,33 @@
+module SpiceNetlist cir
+
+import Database
+
+class Device
+    sym Description
+
+class Pin
+
+class Root
+
+class Attr
+    bool NameVisible
+    bool ValueVisible
+    bool Optional
+
+class Netlist:Database
+    bool Used
+
+class Param
+
+// Device relationships
+relationship Device Pin hashed mandatory
+relationship Device Attr hashed mandatory
+relationship Device Netlist:Internal child_only
+
+// Root relationships
+relationship Root Device hashed mandatory
+relationship Root Netlist linked_list mandatory
+
+// Netlist relationships
+relationship Netlist Param hashed mandatory child_only
+

@@ -1,0 +1,9 @@
+This is a simple spice test
+
+.include spicetest.cir
+
+Xspicetest spicetest
+
+VSS VSS 0 0
+
+.tran 10ns

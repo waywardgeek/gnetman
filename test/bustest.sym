@@ -1,0 +1,30 @@
+v 20030901
+P 2600 700 2900 700 1 0 1
+{
+T 2500 700 5 8 1 1 0 7
+pinlabel=OUT[3:0]
+T 2500 700 5 8 0 0 0 7
+pinnumber=OUT[3:0]
+T 2500 700 5 8 0 0 0 7
+pinseq=1
+T 2500 700 5 8 0 0 0 7
+pintype=out
+}
+P 300 700 0 700 1 0 1
+{
+T 400 700 5 8 1 1 0 1
+pinlabel=IN[3:0]
+T 400 700 5 8 0 0 0 1
+pinnumber=IN[3:0]
+T 400 700 5 8 0 0 0 1
+pinseq=2
+T 400 700 5 8 0 0 0 1
+pintype=in
+}
+B 300 300 2300 800 3 0 0 0 -1 -1 0 -1 -1 -1 -1 -1
+T 1450 400 8 10 1 1 0 3
+comment=bustest
+T 1450 0 8 10 1 1 0 3
+refdes=U?
+T 0 0 8 8 0 0 0 0
+source=bustest.sch

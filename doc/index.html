@@ -1,0 +1,51 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=utf-8">
+	<TITLE></TITLE>
+	<META NAME="GENERATOR" CONTENT="OpenOffice.org 1.1.1  (Linux)">
+	<META NAME="AUTHOR" CONTENT="Bill Cox">
+	<META NAME="CREATED" CONTENT="20031215;6294900">
+	<META NAME="CHANGED" CONTENT="20040730;11540500">
+</HEAD>
+<BODY LANG="en-US" DIR="LTR">
+<H1>Gnetman – A GNU Netlist Manipulation Library</H1>
+<P>The gnetman project has one simple goal:  Enabling
+interoperability between open-source EDA tools.  To date, gnetman can
+read and/or write (in theory) formats used by the following tools:</P>
+<UL>
+	<LI><P>gschem -&gt; .sch files -&gt; gnetman</P>
+	<LI><P>iverilog &lt;--&gt; gate-level Verilog &lt;--&gt; gnetman</P>
+	<LI><P>gnetman &lt;--&gt; spice netlist -&gt; ltspice or hspice or eldo
+	or gnucap or tclspice</P>
+	<LI><P>confluence -&gt; gate-level Verilog -&gt; gnetman</P>
+</UL>
+<P>Other formats that still need support to be developed in gnetman
+include:</P>
+<UL>
+	<LI><P>gate-level VHDL</P>
+	<LI><P>EDIF netlists</P>
+</UL>
+<P>In addition, an automatic schematic generator from gnetman to
+gschem would be highly desirable.</P>
+<P>Gnetman can be linked as a shared or static library into any
+open-source EDA tool.  It also has a command-line version that takes
+TCL scripts and command-line arguments in order to translate file
+formats.  The latest version of gnetman is <A HREF="gnetman-11Dec06.tar.gz">gnetman-11Dec06.tar.gz</A>.</P>
+<P>There is a README file in the gnetman directory that explains how
+to use it. The primary use so far has been for complex IC design,
+including mixed-signal ICs. Supported features include multi-level
+hierarchy, instance arrays, and buses. If you're just doing flat
+designs for PC boards or spice simulations, the usual path is to use
+the spice-sdb netlister for gnetlist.</P>
+<P>Gnetman depends heavily on the open-source database generated called DataDraw.  The latest
+version of DataDraw can be found at <A HREF="http://datadraw.sourceforge.net">Source Forge</A></P>
+<P>Anyone interested in understanding the code base can look at the
+<A HREF="programming.html">Gnetman Programming</A> page.</P>
+<P>If you have questions or ideas for either project, feel free to
+send me e-mail at <A HREF="mailto:bill@viasic.com">bill@viasic.com</A>.
+I've also been reading the geda-user mailing list from the
+geda.seul.org site.</P>
+<P>Bill Cox</P>
+</BODY>
+</HTML>

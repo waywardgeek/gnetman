@@ -1,0 +1,44 @@
+module Verilog vr
+
+import Database
+
+class Netlist:Database
+
+class Idec
+    uint32 LineNum
+    sym InternalNetlistSym
+    sym Sym
+
+class Param
+    sym Sym
+
+class Conn
+    db:Bus Bus
+    db:Net Net
+    uint32 Length
+    uint32 Mask
+    bool Const
+    uint32 Right
+    uint32 Left
+    bool Range
+
+class Defparam
+    sym Sym
+    sym Value
+
+class Path
+    sym Sym
+
+// Netlist relationships
+relationship Netlist Idec tail_linked mandatory
+relationship Netlist Defparam linked_list mandatory
+
+// Idec relationships
+relationship Idec Param tail_linked mandatory
+
+// Param relationships
+relationship Param Conn tail_linked mandatory
+
+// Defparam relationships
+relationship Defparam Path tail_linked mandatory
+

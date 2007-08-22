@@ -1,0 +1,172 @@
+module Schematics sch
+
+import Database
+
+enum ObjectType
+    SCH_TEXT  // 0
+    SCH_COMPLEX  // 1
+    SCH_PIN  // 2
+    SCH_BUS  // 3
+    SCH_NET  // 4
+
+class Net
+    bool NameGenerated
+    bool Bus
+
+class Comp
+    uint32 Right
+    uint32 Left
+    bool Array
+    db:Inst Inst
+    sym SymbolName
+    bool Mirror
+    uint16 Angle
+    bool Selectable
+    int32 Y
+    int32 X
+
+class Mpin array
+    db:Mbus Mbus
+    db:Mport Mport
+    uint32 Right
+    uint32 Left
+    bool Bus
+    int32 Y2
+    int32 X2
+    uint32 Sequence
+    int32 Y
+    int32 X
+    db:MportType Type
+
+class Schem
+    sym Path
+    bool Written
+
+class Root
+
+class Symbol
+    sym Path
+    sym Device
+    db:Netlist Netlist
+    db:NetlistType Type
+
+class Pin
+    db:Port Port
+    int32 Y
+    int32 X
+
+class Wire
+    bool Bus
+    int32 Y2
+    int32 X2
+    int32 Y1
+    int32 X1
+
+class Attr
+    uint8 Angle
+    uint8 Alignment
+    uint8 Size
+    uint8 Color
+    bool ShowValue
+    bool ShowName
+    bool Visible
+    sym Value
+    int32 Y
+    int32 X
+    sym Name
+
+class Conn
+    int32 Y
+    int32 X
+
+class Graphic
+
+class Line
+    uint8 Color
+    int32 Y2
+    int32 X2
+    int32 Y1
+    int32 X1
+
+class Rect
+    uint8 Color
+    db:utBox Box
+
+class Circle
+    uint8 Color
+    uint32 Radius
+    int32 Y
+    int32 X
+
+class Arc
+    uint8 Color
+    uint8 EndAngle
+    uint8 StartAngle
+    uint32 Radius
+    int32 Y
+    int32 X
+
+class Signal
+    sym Sym
+
+class Bus
+    uint32 Left
+    uint32 Right
+    db:Bus DbBus
+
+class Col
+
+// Net relationships
+relationship Net Wire linked_list cascade
+relationship Net Pin tail_linked
+relationship Net Signal tail_linked mandatory
+relationship Net Attr cascade child_only
+
+// Comp relationships
+relationship Comp Pin tail_linked mandatory
+relationship Comp Attr cascade child_only
+
+// Mpin relationships
+relationship Mpin Pin linked_list mandatory parent_only
+relationship Mpin Comp:Flag
+relationship Mpin Attr cascade child_only
+
+// Schem relationships
+relationship Schem Comp hashed mandatory
+relationship Schem Net hashed mandatory
+relationship Schem Wire doubly_linked mandatory
+relationship Schem Bus hashed mandatory
+relationship Schem Attr cascade child_only
+relationship Schem Col array
+
+// Root relationships
+relationship Root Schem hashed mandatory
+relationship Root Symbol hashed mandatory
+
+// Symbol relationships
+relationship Symbol Schem
+relationship Symbol Mpin hashed mandatory
+relationship Symbol Comp doubly_linked mandatory
+relationship Symbol Attr cascade child_only
+relationship Symbol Graphic cascade child_only
+
+// Wire relationships
+relationship Wire:R Conn:R linked_list mandatory
+relationship Wire:L Conn:L linked_list mandatory
+relationship Wire Attr cascade child_only
+
+// Attr relationships
+relationship Attr Attr:Next cascade child_only
+
+// Graphic relationships
+relationship Graphic Line linked_list mandatory
+relationship Graphic Rect linked_list mandatory
+relationship Graphic Circle linked_list mandatory
+relationship Graphic Arc linked_list mandatory
+
+// Bus relationships
+relationship Bus Signal linked_list parent_only
+
+// Col relationships
+relationship Col Comp array
+

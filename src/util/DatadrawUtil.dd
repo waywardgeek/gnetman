@@ -1,0 +1,15 @@
+module DatadrawUtil ut
+
+class Symtab
+    array sym table
+    uint32 numSym
+
+class Sym
+    array char name
+    uint32 hashValue
+    Sym next
+
+class Dynarray
+    array uint8 value 
+    uint16 valueSize
+    uint32 numUsed

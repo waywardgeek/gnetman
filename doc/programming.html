@@ -1,0 +1,68 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=iso-8859-15">
+	<TITLE></TITLE>
+	<META NAME="GENERATOR" CONTENT="OpenOffice.org 1.1.0  (Linux)">
+	<META NAME="AUTHOR" CONTENT="Bill Cox">
+	<META NAME="CREATED" CONTENT="20031230;7070600">
+	<META NAME="CHANGEDBY" CONTENT="Bill Cox">
+	<META NAME="CHANGED" CONTENT="20031230;7205100">
+</HEAD>
+<BODY LANG="en-US" DIR="LTR">
+<H1>Programming in Gnetman</H1>
+<P>Anyone interested in working with gnetman to create new netlist
+maniputlation tools first needs to understand the datastructures. 
+This means working with DataDraw schemas, which is a class
+diagramming tool used by gnetman.</P>
+<P><IMG SRC="netlist.jpg" NAME="Graphic1" ALIGN=LEFT WIDTH=1200 HEIGHT=907 BORDER=0><BR CLEAR=LEFT><BR><BR>
+</P>
+<P>Here's a quick one-liner about each class in the database schema:
+<BR><BR>Root<BR>Just a name-based hash table of designs so you can
+find a design given it's name.<BR><BR>Design <BR>The top level for a
+hierarchical structural design.&nbsp; It has a name, and a hash table
+(by name) of netlists. &nbsp;Designs point to the root netlist, and
+also have a name-based hash table of Globals<BR><BR>Globals<BR>Just
+global nets. &nbsp;Global nets have a list of local nets in the
+various netlists that map to them.<BR><BR>Netlist <BR>This is
+basically the result of one schematic. &nbsp;There are name based
+hash tables of nets, instances, and the I/O ports, called Mports (for
+master port). &nbsp;Mports can be grouped into bus ports called Mbus,
+which are also hashed by name. &nbsp;Nets can be grouped into Bus
+objects that are also hashed by name.<BR><BR>Inst <BR>Netlist
+instances, some of which represent sub-netlists. &nbsp;Instances are
+inside their owning netlists, but also can have an &quot;Internal&quot;
+netlist that is the sub-netlist represented by the instance.
+&nbsp;Instances have doubly linked lists of their ports.<BR><BR>Net
+<BR>Nets within a schematic. &nbsp;They have doubly linked lists of
+their ports.<BR><BR>Port <BR>I/Os of instances. &nbsp; These objects
+are used to connect instances to nets, and will always have an owning
+mport that has info like the port name on it.<BR><BR>Mport <BR>Mports
+(for Master port) describe the I/Os of a netlist.&nbsp; They
+correspond to flag instances inside the schematic. &nbsp;A netlist
+like NAND2 might have a single Mport named Z, but there can be 10,000
+instances of the NAND2. &nbsp;In this case, there will be only one
+Mport for Z, and that's where the name Z is stored, along with
+information like whether the port is an input or output. &nbsp;Each
+of the 10,000 instances of the NAND2 will be represented with an Inst
+object, and there will be a Port object on each of them corresponding
+to the Z mport.<BR><BR>Bus <BR>Busses are a simple class that have an
+array of nets. <BR><BR>Mbus <BR>Mbusses represent I/O busses. <BR><BR>Hier
+<BR>This class is a somewhat new concept for me.&nbsp; In the past,
+I've just used the netlist/inst relationships to keep track of the
+hierarchy.&nbsp; The problem is that the first thing we often do is
+flatten the design.&nbsp; This results in a few problems.&nbsp;
+First, names get really long for large designs.&nbsp; They can use up
+a large portion of the memory.&nbsp; Second, we loose the hierarchy
+info, which often is needed later.&nbsp; For example, the Altera
+back-end tools make good use of hierarchy, even if it's uniquified.&nbsp;
+This means some poor guy has to recreate hierarchy from net names,
+which is generally buggy.&nbsp; Or, perhaps we want to see the
+results of synthesis, but want the gates presented in a hierarchy as
+similar to the original as possible.&nbsp; Another problem is that
+early on, before flattening, there's no place to put instance
+attributes.&nbsp; This leads most systems to have some kind of hacked
+hierarchy object anyway. <BR><BR><BR>
+</P>
+</BODY>
+</HTML>

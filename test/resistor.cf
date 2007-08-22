@@ -1,0 +1,34 @@
+with
+  A B
+  genRes
+  resistor
+is
+
+component resistor -a -b with n is
+  {external_softvector "R250" [] 2 n}
+  a = n'[1]
+  b = n'[0]
+end
+
+component genRes -A -B +value is
+  if (value % 250) != 0
+    {error "Resistor value must be multiple of 250"}
+  ef value == 250
+    {resistor A B}
+  else with N is
+    {resistor A N}
+    {genRes N B (value - 250)}
+  end
+end
+
+(* Just the I/Os of the resistor *)
+{inout "A" 1 1 A}
+{inout "B" 2 1 B}
+
+{genRes A B 5000}
+
+{set "FileName" "resistor"}
+{set "BuildName" "resistor"}
+{set "Header" "Generated resistor"}
+{set "GenVerilog" true}
+

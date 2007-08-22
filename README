@@ -1,0 +1,271 @@
+Gnetman is a netlist manipulation package.  It's primary goal is to
+help provide interoperability between open-source EDA tools.  Gnetman
+can currently:
+
+-- Create block symbols for new schematics that are gnetman compatible
+-- Read entire gschem schematic designs.
+-- Read/write SPICE netlists (various formats)
+-- Read/write verilog gate-level netlists
+-- Write PCB netlists for the 'pcb' tool on linux
+
+Hopefully, additional capabilities will be added, such as a schematic
+generator, or LVS capability.  The gnetman database is designed for just
+such tool support.
+
+---------------------------------------------------------------------------
+Using gnetman:
+
+The executable for gnetman is now in the bin directory.  To use gnetman,
+the easiest way is command line parameters:
+
+    gnetman -g myschem.sch
+
+will generate a default block symbol for a schematic.
+
+    gnetman -c myschem.sch
+
+will create myschem.cir, which is a hierarchical spice netlist.  If you need the
+top level to be a .subcir, use:
+
+    gnetman -C myshem.sch
+
+Some other flags that effect how gnetman runs include:
+
+   -i -- Enter an interactive TCL shell after processing command line
+   -r <TCL file> -- Use this file as the initialization file, rather than
+                    ${HOME}\.gEDA\gnetmanrc.tcl
+   -S <spice type> -- Choose a spice target format: pspice, hspice, tclspice,                      or ltspice
+
+The output netlist format defaults to PSpice.
+
+After processing arguments, any TCL files listed on the command line are
+executed.
+As long as all your symbols and schematics are in the current directory,
+the commands above should work.  To tell gnetman how to find schematics
+and symbols elsewhere, you need to create a ${HOME}/.gEDA/gnetmanrc.tcl script
+of the form:
+
+    component_library {${HOME}/gnetman/sym}
+    component_library {${HOME}/mydir1}
+    source_library {${HOME}/mydir1}
+    component_library {${HOME}/mydir1/mydir2}
+    source_library {${HOME}/mydir1/mydir2}
+    ...
+
+Note that gnetman supports relative paths in the 'source' attributes on
+symbols.  You'll also need to add these commands to the ${HOME}/.gEDA/gschemrc
+file:
+
+    (component-library "${HOME}/gnetman/sym")
+    (component-library "${HOME}/mydir1")
+    (source-library "${HOME}/mydir1")
+    (component-library "${HOME}/mydir1/mydir2")
+    (source-library "${HOME}/mydir1/mydir2")
+    (component-library ".")
+    (source-library ".")
+    ...
+
+In addition, For CMOS IC design, I recommend the additional commands at the
+top of the gschemrc file:
+
+    (reset-component-library)
+    (reset-source-library)
+
+
+These simply remove the default symbol libraries, making it easier to find
+the IC ones.
+
+To build schematics compatible with gnetman, you should use the symbols
+in the sym directory.  These symbols have gnetman compatible attributes to
+help support hierarchy, busses, parameter inheritance, instance arrays, etc.
+
+To test out gnetman, try the following:
+
+    cd test
+    gnetman -c reg32.sch           #This creates reg32.cir SPICE netlist
+    gnetman -g reg32.sch           #This creates reg32.sym
+
+Bug reports should go to bill@viasic.com 
+
+---------------------------------------------------------------------------
+Schematic feature support:
+
+Gnetman supports several features needed in IC design.  First, hierarchy.
+As described in the master attribute document for gschem, the source
+attribute is used to locate a sub-schematic.  To connect signals, we have
+these additions:
+
+device=FLAG
+
+This says that a symbol is a schematic flag.  The type (in, out, etc) is
+determined from the pin on the flag, of which there may be only one.  For
+an input flag, make the pin type an output.  Good symbols to use for flags
+are "in.sym", "out.sym", and "io.sym" in the sym directory.
+
+Net and bus names will be infered from flags if there is no netname attribute
+present.  Unnamed nets will be numbered in each schematic starting from N1.
+Unamed instances will be numbered starting from U1.  Any instance name
+ending with a '?' is taken to be an unnamed instance, in which case the
+prefix of the '?' is used to make a unique name in the schematic by appending
+an integer.
+
+Both bus and instance names can be of the form IDENT[<integer>:<integer>].
+If an instance has a range, it will instantiate an array of instances,
+much like what happens in Verilog or VHDL with arrays of instances.
+
+In CMOS design, it's common to place attributes such as transistor width
+on symbols and have them propogate down.  This is supported.  An attribute
+of the form "W={P}" on a mosfet will take the value of the "P" attribute
+placed on the higher level symbol.
+
+SPICE device types are currently infered from the first letter of the name
+of an instance.  This will probably be improved to double check the device
+attribute as well in the near future.
+
+Block symbols can be generated from a schematic automaticall by gnetman.
+The I/Os are determined by the flags found in the schematic.  Any I/O
+capable of driving will be placed on the right, and input-only I/Os will
+be on the left.  The order of the I/Os is determined by the Y coordinate
+of the flags in the schematics.  The pinseq attribute is currently ignored.
+
+For examples of all of these features, check out schematics in the test
+directory.
+
+---------------------------------------------------------------------------
+Creating new SPICE symbols:
+
+The spice netlister in gnetman is meant to be highly configurable.  To
+create a new spice symbol, you might want to start by copying an existing
+one from the sym directory, such as the nmos or pmos symbol.  Be careful
+to edit the symbol file directly with an ASCII editor to make sure the
+attributes look OK.  For example, if you copy the nmos.sym file, be sure
+to delete the attribute that define the base tie-off ("net=vdd:B").
+
+The key attribute that identifies a component to the spice netlister as
+a special spice device is the "spicetype" attribute that should be placed
+as a floating attribute somewhere on the symbol.  It should not be visible.
+The device types found in LT-Spice are currently built-in as defaults that
+are recognised by gnetman.  These types are:
+
+'arbitrary behavioral source' B n+ n- [V=<equation>] [I=<equation>]
+'capacitor' C n+ n- <capacitance> [ic=<value>] [Rser=<value>]
+    [Lser=<value>] [Rpar=<value>] [Cpar=<value>] [m=<value>]
+'diode' D A K <model> [<area>]
+'voltage dependent voltage' E n+ n- nc+ nc- <gain>
+'current dependent current' F n+ n- <Vnam> <gain>
+'voltage dependent current' G n+ n- nc+ nc- <transconductance>
+'current dependent voltage' H n+ n- <Vnam> <transres>
+'independent current source' I n+ n- <current>
+'JFET transistor' J D G S <model> [area] [off] [IC=<Vds,Vgs>] [temp=<T>]
+'mutual inductance' K L1 L2 <coefficient>
+'inductance' L n+ n- <inductance> [ic=<value>] [Rser=<value>] [Rpar=<value>]
+    [Cpar=<value>] [m=<value>]
+'MOSFET transistor' M D G S B <model> [L=<length>] [W=<width>] [AD=<area>] [AS=<area>]
+    [PD=<perim>] [PS=<perim>] [NRD=<value>] [NRS=<value>] [off]
+    [IC=<Vds,Vgs,Vbs>] [temp=<T>]
+'lossy transmission line' O L+ L- R+ R- <model>
+'bipolar transistor' Q C B E [S] <model> [area] [off] [IC=<Vbe,Vce>] [temp=<T>]
+'resistance' R n1 n2 <value>
+'voltage controlled switch' S n1 n2 nc+ nc- <model> [on] [off]
+'lossless transmission line' T L+ L- R+ R- ZO=<value> TD=<value>
+'uniform RC-line' U n1 n2 ncommon <model> L=<len> [N=<lumps>]
+'independent voltage source' V n+ n- <voltage>
+'current controlled switch' W n1 n2 <Vnam> <model> [on] [off]
+'MESFET transistor' Z D G S <model> [area] [off] [IC=<Vds,Vgs>]
+
+Attributes in the above list in angle brackets are manditory attributes
+that must appear either on the symbol or the instance.  If an attribute
+appears in both places, the instance attribute overrides the symbol
+attribute.  Attributes in square brackets are optional attributes.
+
+The syntax shown above is literally parsed by the spice netlister to determine
+how to write out device types.  To add a new device type, just add a command
+to your gnetmanrc file of the form:
+
+    add_spice_device {<string>}
+
+The string should look just like one of the lines above.
+
+If you do make new devices, consider sharing them with others.  If you
+e-mail them to bill@viasic.com, I'll put them in.
+
+---------------------------------------------------------------------------
+Compilation:
+
+Ubuntu Linux:
+
+To compile this project on RedHat Linux, do the following:
+
+    ./configure
+    make
+
+The result of make is a src/gnetman.  This can be copied  to /usr/bin with
+the command (executed as root)
+
+    make install
+
+Other Linux:
+
+This has not been well tested, so if you run into trouble, let me know!
+
+Windows:
+
+There is a .dsp project file in src/batch that can be used to build gnetman
+for Windows using Microsoft Visual C++.  It's old, and needs work.
+
+---------------------------------------------------------------------------
+TCL scripting:
+
+Gnetman also can execute TCL scripts.  If you specify any TCL scripts
+on the command line, the TCL files should contain TCL code, and can
+execute the additional TCL commands:
+
+$config_dir - A variable pointing to the configuration file directory
+set_current_design designName 
+set_current_netlist netlistName 
+set_root_netlist netlistName 
+create_net netName 
+merge_net_into_net sourceNetName destNetName 
+get_current_design 
+read_spice_netlist designName spiceFileName 
+component_library dirName 
+source_library dirName 
+reset_source_library 
+reset_component_library 
+set_spice_target spiceType 
+add_spice_device device 
+create_default_symbol schemName 
+read_schematic designName schemName 
+write_spice_netlist spiceFileName includeTopLevelPorts maxLineLength 
+write_verilog_netlist verilogFileName 
+read_verilog_netlist designName verilogFileName 
+generate_devices 
+convert_power_insts_to_globals 
+thread_global_through_hierarchy globalName createTopLevelPorts 
+thread_globals_through_hierarchy createTopLevelPorts 
+rename_global globalName newGlobalName 
+set_netlist_value netlistName propName value 
+get_netlist_value netlistName propName 
+set_inst_value instName propName value 
+get_inst_value instName propName 
+set_net_value netName propName value 
+get_net_value netName propName 
+explode_instance_arrays 
+get_first_inst 
+get_next_inst instName 
+get_first_net 
+get_next_net netName 
+get_first_netlist 
+get_next_netlist netlistName 
+get_inst_internal_netlist instName 
+net_exists netName 
+inst_exists instName 
+
+Note that TCL uses {}'s to enclose strings without any substitution,
+unlike bash or other shells, which use single quotes.
+
+If there is a gnetemanrc.tcl file in ~/.gEDA, it will be executed before
+processing command line arguments.  This makes a good place to put a
+set_spice_target command, for example.  If there is a gnetmanrc.tcl file
+in the current working directory, it will be executed next.
+

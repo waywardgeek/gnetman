@@ -1,0 +1,153 @@
+module Database db
+
+typedef utBox
+
+enum MportType
+    DB_OUT  // 0
+    DB_IN  // 1
+    DB_IO  // 2
+    DB_OC  // 3
+    DB_OE  // 4
+    DB_PAS  // 5
+    DB_TP  // 6
+    DB_TRI  // 7
+    DB_CLK  // 8
+    DB_PWR  // 9
+    DB_NODIR  // 10
+
+enum NetlistType
+    DB_JOIN  // 0
+    DB_SUBCIRCUIT  // 1
+    DB_DEVICE  // 2
+    DB_POWER  // 3
+    DB_FLAG  // 4
+
+enum SpiceTargetType
+    DB_NULL_SPICE_TYPE  // 0
+    DB_LTSPICE  // 1
+    DB_TCLSPICE  // 2
+    DB_HSPICE  // 3
+    DB_PSPICE  // 4
+    DB_CDL  // 5
+
+enum Direction
+    DB_INOUT  // 0
+    DB_OUTPUT  // 1
+    DB_INPUT  // 2
+
+enum NetlistFormat
+    DB_SCHEMATIC  // 0
+    DB_NOFORMAT  // 1
+    DB_VHDL  // 2
+    DB_SPICE  // 3
+    DB_VERILOG  // 4
+    DB_PCB  // 5
+
+class Design
+    Global ZeroGlobal
+    Global OneGlobal
+
+class Netlist
+    sym Device
+    bool Visited
+    db:NetlistType Type
+
+class Net
+    bool Visited
+
+class Inst
+    bool Array
+
+class Mport
+    bool Visited
+    db:MportType Type
+
+class Port
+
+class Mbus
+    db:MportType Type
+    uint32 Right
+    uint32 Left
+
+class Bus
+    uint32 Left
+    uint32 Right
+
+class Hier
+
+class Global
+
+class Attr
+    bool Declared
+    sym Value
+    sym Name
+
+// Global data has to live here so that binary load/save work.
+class Root create_only
+    Design CurrentDesign
+    Design CurrentLibrary
+    Netlist CurrentNetlist
+    array char GschemComponentPath
+    array char GschemSourcePath
+    SpiceTargetType SpiceTarget
+    sym DefaultOneSym
+    sym DefaultZeroSym
+    uint32 MaxLineLength
+    bool IncludeTopLevelPorts
+    bool LibraryWins
+
+class Devspec
+    db:SpiceTargetType Type
+    array char String
+
+// Design relationships
+relationship Design Netlist hashed mandatory
+relationship Design Netlist:Root child_only
+relationship Design Global hashed mandatory
+relationship Design:Library Design:Linked linked_list
+relationship Design Attr cascade child_only
+
+// Netlist relationships
+relationship Netlist Net hashed mandatory
+relationship Netlist Mport hashed mandatory
+relationship Netlist Inst hashed mandatory
+relationship Netlist Mbus hashed mandatory
+relationship Netlist Bus hashed mandatory
+relationship Netlist Hier cascade child_only
+relationship Netlist:Internal Inst:External doubly_linked mandatory
+relationship Netlist Attr cascade child_only
+
+// Net relationships
+relationship Net Port doubly_linked
+relationship Net Attr cascade child_only
+
+// Inst relationships
+relationship Inst Port doubly_linked mandatory
+relationship Inst Attr cascade child_only
+
+// Mport relationships
+relationship Mport Port mandatory parent_only
+relationship Mport Port:Flag child_only
+relationship Mport Attr cascade child_only
+
+// Mbus relationships
+relationship Mbus Mport array
+relationship Mbus:External Inst:Flag
+
+// Bus relationships
+relationship Bus Net array
+
+// Hier relationships
+relationship Hier Hier hashed cascade
+relationship Hier Inst doubly_linked
+
+// Global relationships
+relationship Global Net doubly_linked
+
+// Attr relationships
+relationship Attr Attr:Next cascade child_only
+
+// Root relationships
+relationship Root Design hashed mandatory
+relationship Root Devspec hashed mandatory
+

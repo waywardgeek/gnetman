@@ -1,0 +1,18 @@
+module Hash ht
+
+class Htbl
+    uint16 SizeExp
+    uint32 NumEntries
+
+class Entry
+    bool Used
+    float Score
+    uint32 HashValue
+    uint32 Data
+
+// Htbl relationships
+relationship Htbl Entry array mandatory child_only
+
+// Entry relationships
+relationship Entry Entry cascade child_only
+
