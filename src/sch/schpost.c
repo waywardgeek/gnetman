@@ -431,7 +431,7 @@ static void setUnnamedNetsToFlagNames(
         if(schNetNameGenerated(net)) {
             setNetNameToFlagName(net);
         }
-    } schEndSafeForeachSchemNet;
+    } schEndSafeSchemNet;
 }
 
 /*--------------------------------------------------------------------------------------------------
@@ -586,7 +586,7 @@ static void nameUnnamedComps(
                 schSchemInsertComp(schem, comp);
             }
         }
-    } schEndSafeForeachSchemComp;
+    } schEndSafeSchemComp;
 }
 
 /*--------------------------------------------------------------------------------------------------

@@ -70,10 +70,10 @@ bison -d -p at -o ../attrproc/atparse.c -b at ../attrproc/atparse.y
 flex -f -i -Pat -o../attrproc/atscan.c ../attrproc/atscan.l
 bison -d -p vr -o ../verilog/vrparse.c -b vr ../verilog/vrparse.y
 flex -f -Pvr -o../verilog/vrscan.c ../verilog/vrscan.l
-/usr/local/bin/swig -tcl8 ../tcl/tclfunc.i
+swig -tcl8 ../tcl/tclfunc.i
 
 CFLAGS="-g -Wall -W -Wno-unused-parameter -Wno-unused-function -DDD_DEBUG -I../include -I../spice -I/usr/include/tcl8.4"
-LIBS="-lpopt -ltcl8.4 -lddutil"
+LIBS="-lpopt -ltcl8.4 -lddutil-dbg"
 
 echo "CC=$CC
 CFLAGS=$CFLAGS
@@ -94,7 +94,7 @@ $(TARGET): $(OBJECTS)
 	$(CC) $(CFLAGS) $(OBJECTS) $(LIBS) -o $(TARGET)
 
 clean:
-	rm -f $(OBJECTS)
+	rm -f $(OBJECTS) ../*/*database.[ch] ../*/*scan.c ../*/*parse.c
 
 # Special targets
 ../spice/cirparse.c ../spice/cirparse.h: ../spice/cirparse.y ../spice/cir.h
@@ -116,8 +116,8 @@ clean:
 	flex -f -Pvr -o../verilog/vrscan.c ../verilog/vrscan.l
 
 ../tcl/tclfunc_wrap.c: ../tcl/tclfunc.i ../tcl/tclfunc.h
-	/usr/local/bin/swig -tcl8 ../tcl/tclfunc.i
-
+	swig -tcl8 ../tcl/tclfunc.i
+'"
 ../include/dbdatabase.h ../database/dbdatabase.c: ../database/Database.dd
 	datadraw $modulePath -h ../include ../database/Database
 
@@ -136,7 +136,7 @@ clean:
 ../sch/schdatabase.h ../sch/schdatabase.c: ../sch/Schematics.dd
 	datadraw $modulePath ../sch/Schematics
 
-' >> makefile
+" >> makefile
 
 for sourceFile in $SOURCE; do
     objFile="obj/`basename $sourceFile | sed 's/\.c$/.o/'`"

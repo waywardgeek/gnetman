@@ -1,6 +1,6 @@
 module Database db
 
-typedef utBox
+typedef utBox = "utMakeEmptyBox()"
 
 enum MportType
     DB_OUT  // 0

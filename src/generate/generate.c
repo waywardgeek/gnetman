@@ -257,7 +257,7 @@ static bool generateResistors(
         if(!generateResistor(inst)) {
             passed = false;
         }
-    } dbEndSafeForeachNetlistExternalInst;
+    } dbEndSafeNetlistExternalInst;
     return passed;
 }
 
@@ -418,7 +418,7 @@ static bool generateCapacitors(
         if(!generateCapacitor(inst)) {
             passed = false;
         }
-    } dbEndSafeForeachNetlistExternalInst;
+    } dbEndSafeNetlistExternalInst;
     return passed;
 }
 

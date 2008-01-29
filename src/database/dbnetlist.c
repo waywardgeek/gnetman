@@ -157,7 +157,7 @@ void dbDesignMakeNetlistNamesUpperCase(
         if(newName != dbNetlistGetSym(netlist)) {
             dbNetlistRename(netlist, newName);
         }
-    } dbEndSafeForeachDesignNetlist;
+    } dbEndSafeDesignNetlist;
 }
 
 /*--------------------------------------------------------------------------------------------------
@@ -193,7 +193,7 @@ void dbNetlistConvertPowerInstsToGlobals(
                 dbInstDestroy(inst);
             }
         }
-    } dbEndSafeForeachNetlistInst;
+    } dbEndSafeNetlistInst;
 }
 
 /*--------------------------------------------------------------------------------------------------
@@ -386,7 +386,7 @@ void dbNetlistExplodeArrayInsts(
         if(dbInstArray(inst) && dbInstGetType(inst) != DB_FLAG) {
             dbInstExplode(inst);
         }
-    } dbEndSafeForeachNetlistInst;
+    } dbEndSafeNetlistInst;
 }
 
 /*--------------------------------------------------------------------------------------------------

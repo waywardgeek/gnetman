@@ -165,7 +165,7 @@ static void setPinPositions(
     schSafeForeachSymbolMpin(symbol, mpin) {
         schMpinArrayAppendMpin(schSymbolMpins, mpin);
         schSymbolRemoveMpin(symbol, mpin);
-    } schEndSafeForeachSymbolMpin;
+    } schEndSafeSymbolMpin;
     qsort(schMpinArrayGetMpins(schSymbolMpins), schMpinArrayGetUsedMpin(schSymbolMpins),
         sizeof(schMpin), compareMpinYs);
     schForeachMpinArrayMpin(schSymbolMpins, mpin) {
