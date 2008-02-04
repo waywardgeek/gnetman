@@ -3,6 +3,7 @@
 
 char *config_dir;
 extern int Tclfunc_SafeInit(Tcl_Interp *interp);
+extern int Tclfunc_Init(Tcl_Interp *interp);
 
 /*--------------------------------------------------------------------------------------------------
   Run a Tcl script, and return the result.
@@ -16,6 +17,7 @@ bool tcRunScript(
    config_dir = utGetConfigDirectory();
    Tcl_Init(interp);
    /*Tclfunc_SafeInit(interp);*/
+   Tclfunc_Init(interp);
    result = Tcl_EvalFile(interp, (char *)fileName) == TCL_OK;
    if (!result) {
       utWarning("Tcl error in file %s, line %d: %s", fileName,
@@ -36,6 +38,8 @@ bool tcRunInterpreter(void)
 
    config_dir = utGetConfigDirectory();
    Tcl_Init(interp);
+   /*Tclfunc_SafeInit(interp);*/
+   Tclfunc_Init(interp);
    do {
       printf("%s", "\n% ");
       xChar = 0;
