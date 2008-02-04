@@ -301,6 +301,7 @@ void baStart(void)
 {
     dbStart();
     htStart();
+    tcStart();
 }
 
 /*--------------------------------------------------------------------------------------------------
@@ -308,6 +309,7 @@ void baStart(void)
 --------------------------------------------------------------------------------------------------*/
 void baStop(void)
 {
+    tcStop();
     htStop();
     dbStop();
 }
@@ -357,7 +359,7 @@ int main(
     }
     baStop();
     if(!didSomething) {
-        usage(NULL);
+        usage("Nothing to do");
     }
     utFree(baExecutableName);
     utUnsetjmp();
