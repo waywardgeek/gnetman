@@ -985,26 +985,13 @@ dbDesign cirReadDesign(
                 cirLineNum = 0;
                 cirCurrentNetlist = dbNetlistNull;
                 cirLastNetlist = dbNetlistNull;
-
-                /*
-                 * if(readSpice() || cirLastNetlist == dbNetlistNull) {
-                 *     freeUnusedDeviceNetlists();
-                 *     design = cirCurrentDesign;
-                 *     dbDesignSetRootNetlist(design, cirLastNetlist);
-                 * } else {
-                 *     dbDesignDestroy(cirCurrentDesign);
-                 * }
-                 */
-
-                 /*
-                  * Notes: netlist can have no root or an empty root, that is legal
-                  *        especially when dealing with lvs netlist
-                  *        that is why freeUnusedDeviceNetlists is commented out too.
-                  *
-                  * TODO: shall we make a tcl interface to permit user to call freeUnusedDeviceNetlists themselves?
-                  */ 
-                 readSpice();
-                 dbDesignSetRootNetlist(cirCurrentDesign, cirLastNetlist);
+                if(readSpice() || cirLastNetlist == dbNetlistNull) {
+                    freeUnusedDeviceNetlists();
+                    design = cirCurrentDesign;
+                    dbDesignSetRootNetlist(design, cirLastNetlist);
+                } else {
+                    dbDesignDestroy(cirCurrentDesign);
+                }
             }
         }
     }

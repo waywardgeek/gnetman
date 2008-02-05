@@ -26,7 +26,6 @@ relationship Device Netlist:Internal child_only
 
 // Root relationships
 relationship Root Device hashed mandatory
-relationship Root Netlist linked_list mandatory
 
 // Netlist relationships
 relationship Netlist Param hashed mandatory child_only
