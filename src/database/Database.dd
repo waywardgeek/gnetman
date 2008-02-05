@@ -21,6 +21,7 @@ enum NetlistType
     DB_DEVICE  // 2
     DB_POWER  // 3
     DB_FLAG  // 4
+    DB_UNDEFINED // 5
 
 enum SpiceTargetType
     DB_NULL_SPICE_TYPE  // 0

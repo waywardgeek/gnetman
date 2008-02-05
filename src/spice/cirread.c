@@ -543,7 +543,8 @@ static bool executeInstance(void)
             }
         }
         if(internalNetlist == dbNetlistNull) {
-            cirError("Unable to find subcircuit '%s'", utSymGetName(internalNetlistSym));
+            /*cirError("Unable to find subcircuit '%s'", utSymGetName(internalNetlistSym));*/
+            internalNetlist = dbNetlistCreate(cirCurrentDesign, internalNetlistSym, DB_UNDEFINED, utSymNull);
             return false;
         }
     } else {
@@ -651,13 +652,18 @@ static bool executeSubckt(void)
     }
     cirCurrentNetlist = dbDesignFindNetlist(cirCurrentDesign, netlistName);
     if(cirCurrentNetlist != dbNetlistNull) {
-        cirError("Redefinition of sub-circuit %s -- using old circuit",
-            utSymGetName(netlistName));
-        /* Skip to next sub-circuit */
-        cirSkipSubcircuit = true;
-        return true;
+        if(dbNetlistGetType(cirCurrentNetlist) == DB_SUBCIRCUIT) {
+            cirError("Redefinition of sub-circuit %s -- using old circuit",
+                utSymGetName(netlistName));
+            /* Skip to next sub-circuit */
+            cirSkipSubcircuit = true;
+            return true;
+        } 
+        dbNetlistSetType(cirCurrentNetlist, DB_SUBCIRCUIT);
+    } else {
+        cirCurrentNetlist = dbNetlistCreate(cirCurrentDesign, netlistName, DB_SUBCIRCUIT, utSymNull);
     }
-    cirCurrentNetlist = dbNetlistCreate(cirCurrentDesign, netlistName, DB_SUBCIRCUIT, utSymNull);
+
     if(!buildMports()) {
         return false;
     }
@@ -924,12 +930,21 @@ static bool executeLine(void)
 --------------------------------------------------------------------------------------------------*/
 static bool readSpice(void)
 {
+    dbNetlist netlist;
+
     skipLine(); /* The first line is a comment */
     while(readLine()) {
         if(!executeLine()) {
             return false;
         }
     }
+
+    dbForeachDesignNetlist(cirCurrentDesign, netlist) {
+        if(dbNetlistGetType(netlist) == DB_UNDEFINED) {
+            utWarning("Undefined subcircuit %s", utSymGetName(dbNetlistGetSym(netlist)));
+        }
+    } dbEndDesignNetlist;
+
     return true;
 }
 
@@ -970,13 +985,26 @@ dbDesign cirReadDesign(
                 cirLineNum = 0;
                 cirCurrentNetlist = dbNetlistNull;
                 cirLastNetlist = dbNetlistNull;
-                if(readSpice() || cirLastNetlist == dbNetlistNull) {
-                    freeUnusedDeviceNetlists();
-                    design = cirCurrentDesign;
-                    dbDesignSetRootNetlist(design, cirLastNetlist);
-                } else {
-                    dbDesignDestroy(cirCurrentDesign);
-                }
+
+                /*
+                 * if(readSpice() || cirLastNetlist == dbNetlistNull) {
+                 *     freeUnusedDeviceNetlists();
+                 *     design = cirCurrentDesign;
+                 *     dbDesignSetRootNetlist(design, cirLastNetlist);
+                 * } else {
+                 *     dbDesignDestroy(cirCurrentDesign);
+                 * }
+                 */
+
+                 /*
+                  * Notes: netlist can have no root or an empty root, that is legal
+                  *        especially when dealing with lvs netlist
+                  *        that is why freeUnusedDeviceNetlists is commented out too.
+                  *
+                  * TODO: shall we make a tcl interface to permit user to call freeUnusedDeviceNetlists themselves?
+                  */ 
+                 readSpice();
+                 dbDesignSetRootNetlist(cirCurrentDesign, cirLastNetlist);
             }
         }
     }
