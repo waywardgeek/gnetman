@@ -35,6 +35,7 @@ FILE *baFile;
 static char *baExecutableName;
 static char *baRcFileName;
 static bool baInteractive;
+static bool baNoInit;
 
 /*--------------------------------------------------------------------------------------------------
   Process arguments, performing the requested actions.
@@ -59,10 +60,11 @@ static void usage (
       "   -g <sch file>  --  Generates a block symbol for the schematic\n"
       "   -h -- Print this command summary\n"
       "   -i -- Enter an interactive TCL shell after processing command line\n"
+      "   -n -- Do not read any system and user rc files\n"
       "   -p <sch file> -- Creates a PCB compatible netlist file a .net extension\n"
       "   -r <TCL file> -- Execute this TCL file after the system rc file and the \n"
       "                    ${HOME}" UTDIRSEP_STRING ".gEDA" UTDIRSEP_STRING "gnetmanrc.tcl\n"
-      "   -st <spice type> -- Choose a spice target format: pspice, hspice, tclspice,"
+      "   -st <spice type> -- Choose a spice target format: pspice, hspice, tclspice,\n"
       "                      cdl, or ltspice\n"
       "   -sl <length> -- Set the max line length for SPICE output.  If 0, no line breaks are"
       " added\n"
@@ -111,6 +113,7 @@ static uint32 processArguments(
     const char *optionPtr;
 
     baInteractive = false;
+    baNoInit = false;
     dbMaxLineLength = 80;
     dbIncludeTopLevelPorts = true;
     for(xArg = 1; xArg < argc && argv[xArg][0] == '-'; xArg++) {
@@ -189,11 +192,14 @@ static uint32 processArguments(
         case 'i':
             baInteractive = true;
             break;
+        case 'n':
+            baNoInit = true;
+            break;
         case 'h':
             usage(NULL);
             break;
         case 'r':
-            xArg++;
+            /*xArg++;*/
             break;
         case 's':
             /* Process SPICE options */
@@ -345,8 +351,10 @@ int main(
     }
     baStart();
     baRcFileName = findRcFileArgument(argc, argv);
-    runTclConfigFiles();
     xArg = processArguments(argc, argv, &didSomething);
+    if(!baNoInit) {
+        runTclConfigFiles();
+    }
     while(xArg < argc) {
         if(!tcRunScript(argv[xArg])) {
             utError("Exiting due to errors loading TCL file %s", argv[xArg]);
