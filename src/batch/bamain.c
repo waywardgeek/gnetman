@@ -111,6 +111,7 @@ static uint32 processArguments(
 {
     uint16 xArg;
     const char *optionPtr;
+    dbDesign dbCurrentDesign = dbDesignNull;
 
     baInteractive = false;
     baNoInit = false;
@@ -143,6 +144,7 @@ static uint32 processArguments(
             if(xArg < argc) {
                 dbCurrentDesign = schReadSchematic(utReplaceSuffix(argv[xArg], ""), argv[xArg],
                     dbCurrentLibrary);
+		dbRootSetCurrentDesign(dbTheRoot, dbCurrentDesign);
                 if(dbCurrentDesign == dbDesignNull) {
                     utError("Errors reading schematic %s, exiting...", argv[xArg]);
                 }
@@ -161,6 +163,7 @@ static uint32 processArguments(
             if(xArg < argc) {
                 dbCurrentDesign = schReadSchematic(utReplaceSuffix(argv[xArg], ""), argv[xArg],
                     dbCurrentLibrary);
+		dbRootSetCurrentDesign(dbTheRoot, dbCurrentDesign);
                 if(dbCurrentDesign == dbDesignNull) {
                     utError("Errors reading schematic %s, exiting...", argv[xArg]);
                 }
@@ -177,6 +180,7 @@ static uint32 processArguments(
             if(xArg < argc) {
                 dbCurrentDesign = schReadSchematic(utReplaceSuffix(argv[xArg], ""), argv[xArg],
                     dbCurrentLibrary);
+		dbRootSetCurrentDesign(dbTheRoot, dbCurrentDesign);
                 if(dbCurrentDesign == dbDesignNull) {
                     utError("Errors reading schematic %s, exiting...", argv[xArg]);
                 }

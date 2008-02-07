@@ -21,7 +21,7 @@
 #include "vrext.h"
 
 /* Constructors */
-extern dbNetlist vrNetlistCreate(dbDesign design, utSym name);
+extern dbNetlist vrNetlistCreate(dbDesign design, utSym name, dbNetlistType type);
 
 /* I/O */
 extern void vrPrint(char *newLineText, char *format, ...);

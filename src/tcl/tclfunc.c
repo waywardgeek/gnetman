@@ -21,8 +21,8 @@ int set_current_design(
         utWarning("set_current_design: Unable to locate design %s in the database", designName);
         return 0;
     }
-    dbCurrentDesign = design;
-    dbCurrentNetlist = dbDesignGetRootNetlist(design);
+    dbRootSetCurrentDesign(dbTheRoot, design);
+    dbRootSetCurrentNetlist(dbTheRoot, dbDesignGetRootNetlist(design));
     return 1;
 }
 
@@ -49,6 +49,7 @@ int set_current_netlist(
     char *netlistName)
 {
     dbNetlist netlist;
+    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
 
     if(dbCurrentDesign == dbDesignNull) {
         utWarning("set_current_netlist: no current design in the database");
@@ -70,6 +71,7 @@ int set_root_netlist(
     char *netlistName)
 {
     dbNetlist netlist;
+    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
 
     if(dbCurrentDesign == dbDesignNull) {
         utWarning("set_root_netlist: no current design in the database");
@@ -135,6 +137,7 @@ void merge_net_into_net(
 --------------------------------------------------------------------------------------------------*/
 char *get_current_design(void)
 {
+    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
     if(dbCurrentDesign == dbDesignNull) {
         utWarning("get_current_design: no current design in the database");
         return "";
@@ -223,6 +226,39 @@ void add_spice_device(
 }
 
 /*--------------------------------------------------------------------------------------------------
+  Tell the parser if dollar sign should be considered as a comment
+--------------------------------------------------------------------------------------------------*/
+void set_dollar_as_comment(void)
+{
+    dbDevspec devspec = dbFindCurrentDevspec();
+    dbDevspecSetDollarAsComment(devspec, true);
+}
+
+
+/*--------------------------------------------------------------------------------------------------
+  Tell the parser if dollar sign should not be considered as a comment
+--------------------------------------------------------------------------------------------------*/
+void unset_dollar_as_comment(void)
+{
+    dbDevspec devspec = dbFindCurrentDevspec();
+    dbDevspecSetDollarAsComment(devspec, false);
+}
+
+
+
+/*--------------------------------------------------------------------------------------------------
+  Tell the parser if dollar sign should not be considered as a comment
+--------------------------------------------------------------------------------------------------*/
+int get_dollar_as_comment(void)
+{
+    dbDevspec devspec = dbFindCurrentDevspec();
+    return dbDevspecDollarAsComment(devspec);
+}
+
+
+
+
+/*--------------------------------------------------------------------------------------------------
   Write out the symbol for the schematic.
 --------------------------------------------------------------------------------------------------*/
 int create_default_symbol(
@@ -268,6 +304,7 @@ int write_netlist(
 {
     dbNetlistFormat netlistFormat = dbFindNetlistFormat(format);
     bool passed = true;
+    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
 
     if(dbCurrentDesign == dbDesignNull) {
         utWarning("write_spice_netlist: No current design in the database");
@@ -306,6 +343,7 @@ int read_netlist(
     char *fileName)
 {
     dbNetlistFormat netlistFormat = dbFindNetlistFormat(format);
+    dbDesign  dbCurrentDesign = dbDesignNull;
 
     if(netlistFormat == DB_NOFORMAT) {
         utWarning("Unknown input format specified: %s", format);
@@ -335,6 +373,7 @@ int read_netlist(
         return 0;
     }
     dbCurrentNetlist = dbDesignGetRootNetlist(dbCurrentDesign);
+    dbRootSetCurrentNetlist(dbTheRoot, dbCurrentNetlist);
     return 1;
 }
 
@@ -385,6 +424,7 @@ int write_library(
 {
     dbNetlistFormat netlistFormat = dbFindNetlistFormat(format);
     bool passed = true;
+    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
 
     if(dbCurrentDesign == dbDesignNull) {
         utWarning("write_spice_netlist: No current design in the database");
@@ -416,6 +456,8 @@ int write_library(
 --------------------------------------------------------------------------------------------------*/
 int generate_devices(void)
 {
+    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
+
     if(dbCurrentDesign == dbDesignNull) {
         utWarning("genereate_devices: No design present in database");
         return  0;
@@ -431,6 +473,8 @@ int generate_devices(void)
 --------------------------------------------------------------------------------------------------*/
 void convert_power_insts_to_globals(void)
 {
+    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
+
     if(dbCurrentDesign == dbDesignNull) {
         utWarning("convert_power_insts_to_globals: no current design");
     } else {
@@ -447,6 +491,7 @@ void thread_global_through_hierarchy(
     int createTopLevelPorts)
 {
     dbGlobal global;
+    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
 
     if(dbCurrentDesign == dbDesignNull) {
         utWarning("thread_global_through_hierarchy: no current design");
@@ -468,6 +513,8 @@ void thread_global_through_hierarchy(
 void thread_globals_through_hierarchy(
     int createTopLevelPorts)
 {
+    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
+
     if(dbCurrentDesign == dbDesignNull) {
         utWarning("thread_globals_through_hierarchy: no current design");
     } else {
@@ -483,6 +530,7 @@ void rename_global(
     char *newGlobalName)
 {
     dbGlobal global;
+    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
 
     if(dbCurrentDesign == dbDesignNull) {
         utWarning("rename_global: no current design");
@@ -504,6 +552,7 @@ void rename_netlist(
     char *newNetlistName)
 {
     dbNetlist netlist;
+    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
 
     if(dbCurrentDesign == dbDesignNull) {
         utWarning("rename_netlist: no current design");
@@ -542,6 +591,7 @@ void set_netlist_value(
     char *value)
 {
     dbNetlist netlist;
+    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
 
     if(dbCurrentDesign == dbDesignNull) {
         utWarning("set_netlist_value: no current design");
@@ -564,6 +614,7 @@ char *get_netlist_value(
 {
     dbNetlist netlist;
     utSym value;
+    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
 
     if(dbCurrentDesign == dbDesignNull) {
         utWarning("get_netlist_value: no current design");
@@ -590,6 +641,7 @@ void set_inst_value(
     char *value)
 {
     dbInst inst;
+    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
 
     if(dbCurrentDesign == dbDesignNull) {
         utWarning("set_inst_value: no current design");
@@ -616,6 +668,7 @@ char *get_inst_value(
 {
     dbInst inst;
     utSym value;
+    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
 
     if(dbCurrentDesign == dbDesignNull) {
         utWarning("get_inst_value: no current design");
@@ -646,6 +699,7 @@ void set_net_value(
     char *value)
 {
     dbNet net;
+    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
 
     if(dbCurrentDesign == dbDesignNull) {
         utWarning("set_net_value: no current design");
@@ -672,6 +726,7 @@ char *get_net_value(
 {
     dbNet net;
     utSym value;
+    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
 
     if(dbCurrentDesign == dbDesignNull) {
         utWarning("get_net_value: no current design");
@@ -698,6 +753,8 @@ char *get_net_value(
 --------------------------------------------------------------------------------------------------*/
 void explode_instance_arrays(void)
 {
+    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
+
     if(dbCurrentDesign == dbDesignNull) {
         utWarning("explode_instance_arrays: no current design");
         return;
@@ -799,6 +856,7 @@ char *get_next_net(
 char *get_first_netlist(void)
 {
     dbNetlist netlist;
+    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
 
     if(dbCurrentDesign == dbDesignNull) {
         utWarning("get_first_netlist: no current design in the database");
@@ -819,6 +877,7 @@ char *get_next_netlist(
     char *netlistName)
 {
     dbNetlist netlist;
+    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
 
     if(dbCurrentDesign == dbDesignNull) {
         utWarning("get_next_netlist: no current design in the database");
@@ -893,6 +952,7 @@ void report_port_sums(
     char *pinType,
     char *expression)
 {
+    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
     atReportDesignSums(dbCurrentDesign, utSymCreate(deviceType), utSymCreate(pinType), expression);
 }
 
@@ -905,6 +965,7 @@ void report_portlist_sums(
     char *pinList,
     char *expression)
 {
+    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
     atReportDesignSumsOverPins(dbCurrentDesign, expression, pinList);
 }
 

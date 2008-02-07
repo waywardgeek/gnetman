@@ -44,14 +44,20 @@ static bool inRange(
 --------------------------------------------------------------------------------------------------*/
 dbNetlist vrNetlistCreate(
     dbDesign design,
-    utSym name)
+    utSym name,
+    dbNetlistType type)
 {
     dbNetlist netlist = dbDesignFindNetlist(design, name);
 
     if(netlist != dbNetlistNull) {
-        utError("Module %s defined multiple times", utSymGetName(name));
+        if(dbNetlistGetType(netlist) == DB_UNDEFINED_NETLIST) {
+            dbNetlistSetType(netlist, type);
+        } else {
+            utError("Module %s defined multiple times", utSymGetName(name));
+        }
+    } else {
+        netlist = dbNetlistCreate(design, name, type, utSymNull);
     }
-    netlist = dbNetlistCreate(design, name, DB_SUBCIRCUIT, utSymNull);
     return netlist;
 }
 
@@ -120,7 +126,7 @@ static dbNetlist buildBlackBoxNetlist(
     vrIdec idec,
     utSym sym)
 {
-    dbNetlist netlist = vrNetlistCreate(design, sym); 
+    dbNetlist netlist = vrNetlistCreate(design, sym, DB_UNDEFINED_NETLIST); 
     vrParam param;
     dbMport mport;
     dbMbus mbus;
@@ -170,7 +176,7 @@ static void checkForImplicitModules(
                         internalNetlist = dbDesignFindNetlist(vrCurrentLibrary, sym);
                     }
                     if(internalNetlist == dbNetlistNull) {
-                        utWarning("Module %s not defined.", utSymGetName(sym));
+                        /* utWarning("Module %s not defined.", utSymGetName(sym)); */
                         buildBlackBoxNetlist(design, idec, sym);
                     }
                 }

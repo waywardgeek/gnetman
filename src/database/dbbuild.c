@@ -526,6 +526,7 @@ dbDevspec dbDevspecCreate(
 
     dbDevspecSetSym(devspec, name);
     dbDevspecSetType(devspec, type);
+    dbDevspecSetDollarAsComment(devspec, true);
     dbRootInsertDevspec(dbTheRoot, devspec);
     dbDevspecAllocStrings(devspec, strlen(deviceString) + 1);
     strcpy(dbDevspecGetString(devspec), deviceString);

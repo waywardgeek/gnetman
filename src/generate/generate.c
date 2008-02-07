@@ -55,6 +55,7 @@ static double findSpiceValue(
 --------------------------------------------------------------------------------------------------*/
 static dbNetlist buildRes250Netlist(void)
 {
+    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
     dbNetlist netlist = dbNetlistCreate(dbCurrentDesign, utSymCreate("RES250"), DB_SUBCIRCUIT,
         utSymNull);
     dbMport aMport = dbMportCreate(netlist, utSymCreate("A"), DB_PAS);
@@ -79,6 +80,7 @@ static dbNetlist buildRes250Netlist(void)
 --------------------------------------------------------------------------------------------------*/
 static dbNetlist buildRes6KNetlist(void)
 {
+    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
     dbNetlist netlist = dbNetlistCreate(dbCurrentDesign, utSymCreate("RES6K"), DB_SUBCIRCUIT,
         utSymNull);
     dbMport aMport = dbMportCreate(netlist, utSymCreate("A"), DB_PAS);
@@ -152,6 +154,7 @@ static dbNetlist findNetlistInTable(
 static dbNetlist generateResistorNetlist(
     uint32 value)
 {
+    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
     utSym name = dbDesignCreateUniqueNetlistName(dbCurrentDesign, utSprintf("res%u", value));
     dbNetlist netlist = dbNetlistCreate(dbCurrentDesign, name, DB_SUBCIRCUIT, utSymNull);
     dbMport aMport = dbMportCreate(netlist, utSymCreate("n1"), DB_PAS);
@@ -283,6 +286,7 @@ static dbNetlist buildUnitCapNetlist(
     uint32 xNetlist)
 {
     utSym name = findCapNetlistName(xNetlist);
+    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
     dbNetlist netlist = dbNetlistCreate(dbCurrentDesign, name, DB_SUBCIRCUIT, utSymNull);
     dbMport aMport = dbMportCreate(netlist, utSymCreate("T"), DB_PAS);
     dbMport bMport = dbMportCreate(netlist, utSymCreate("B"), DB_PAS);
@@ -321,6 +325,7 @@ static void buildUnitCapNetlists(void)
 static dbNetlist generateCapacitorNetlist(
     uint32 value)
 {
+    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
     utSym name = dbDesignCreateUniqueNetlistName(dbCurrentDesign, utSprintf("cap%u", value));
     dbNetlist netlist = dbNetlistCreate(dbCurrentDesign, name, DB_SUBCIRCUIT, utSymNull);
     dbNetlist capNetlist = geCapNetlists[0];
@@ -432,6 +437,7 @@ bool geGenerateDevices(void)
     bool passed = true;
     dbAttr deviceAttrs;
     utSym deviceType;
+    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
 
     utLogMessage("Generating SPICE components");
     geCSym = utSymCreate("c");

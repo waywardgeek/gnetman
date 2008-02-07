@@ -129,7 +129,7 @@ dbNet dbBusIndexNet(dbBus bus, uint32 bit);
 
 extern dbRoot dbTheRoot;
 
-#define dbCurrentDesign dbRootGetCurrentDesign(dbTheRoot)
+/*#define dbCurrentDesign dbRootGetCurrentDesign(dbTheRoot)*/
 #define dbCurrentLibrary dbRootGetCurrentLibrary(dbTheRoot)
 #define dbCurrentNetlist dbRootGetCurrentNetlist(dbTheRoot)
 #define dbGschemComponentPath dbRootGetGschemComponentPath(dbTheRoot)

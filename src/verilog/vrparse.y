@@ -218,7 +218,7 @@ module: moduleHeader '(' ioList ')' ';' declarations statements KWENDMODULE
 ;
 
 moduleHeader: KWMODULE IDENT
-{ vrCurrentNetlist = vrNetlistCreate(vrCurrentDesign, $2); }
+{ vrCurrentNetlist = vrNetlistCreate(vrCurrentDesign, $2, DB_SUBCIRCUIT); }
 ;
 
 ioList: /* empty */

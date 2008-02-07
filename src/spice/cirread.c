@@ -31,6 +31,7 @@ static uint32 cirLinePosition, cirLineLength, cirMaxLineLength;
 static char *cirFileName;
 static bool cirSkipSubcircuit;
 static bool cirCheckParameters;
+static bool dollarAsComment = false; 
 
 /* Keywords */
 static utSym cirSubcktSym, cirEndsSym, cirEndSym, cirGlobalSym, cirConnectSym;
@@ -196,6 +197,7 @@ static bool readLine(void)
 {
     cirLineLength = 0;
     cirLinePosition = 0;
+
     if(!readLinePart()) {
         return false;
     }
@@ -203,7 +205,11 @@ static bool readLine(void)
         cirLine[cirLineLength - 1] = ' ';
         readLinePart();
     }
-    if(dbSpiceTarget != DB_HSPICE) {
+
+    /* totally the opposite of my experience, $ is a comment in hspice but not in CDL neither
+       eldo or classic spice */
+    /*if(dbSpiceTarget != DB_HSPICE) {*/
+    if(dollarAsComment) {
         chopOffComment();
     }
     return true;
@@ -315,12 +321,7 @@ static dbNet findOrCreateNet(
     if(net != dbNetNull) {
         return net;
     }
-    net = dbNetCreate(cirCurrentNetlist, netName);
-    global = dbDesignFindGlobal(cirCurrentDesign,  netName);
-    if(global != dbGlobalNull) {
-        dbGlobalInsertNet(global, net);
-    }
-    return net;
+    return dbNetCreate(cirCurrentNetlist, netName);
 }
 
 /*--------------------------------------------------------------------------------------------------
@@ -366,6 +367,45 @@ static bool addInstPorts(
     if(mport != dbMportNull) {
         cirError("Not enough ports specified on instance %s", dbInstGetUserName(inst));
         return false;
+    }
+    return true;
+}
+
+static bool addUndefinedInstPorts(dbInst inst)
+{
+    uint32 lastIdentifierPosition;
+    utSym netName, lastNetName = utSymNull;
+    dbMport mport;
+    char dummyPortName[1024];
+    uint32 dummyPortNumber = 1;
+    dbNetlist internalNetlist = dbInstGetInternalNetlist(inst);
+    char c;
+
+    utDo {
+        lastIdentifierPosition = cirLinePosition;
+        netName = readNodeName();
+        c = skipSpace();
+    } utWhile(netName != utSymNull && c != '=') {
+        if(lastNetName != utSymNull) {
+            sprintf(dummyPortName, "<dummy%d>", dummyPortNumber);
+            dummyPortNumber++;
+            mport = dbMportCreate(internalNetlist, utSymCreate(dummyPortName), DB_UNDEFINED_PORT);
+/*
+            port = dbPortCreate(inst, mport);
+            net = findOrCreateNet(lastNetName);
+            dbNetInsertPort(net, port);
+            mport = dbMportGetNextNetlistMport(mport);
+*/
+        }
+        lastNetName = netName;
+    } utRepeat;
+    if(c != '=' && c != '\0') {
+        cirError("Unexpected character '%c'", c);
+        return false;
+    }
+    if(c == '=') {
+        /* Push back the identifier so it can be read as a parameter */
+        cirLinePosition = lastIdentifierPosition;
     }
     return true;
 }
@@ -469,6 +509,16 @@ static bool addInstParameters(
     return true;
 }
 
+static bool addUndefinedInstParameters(dbInst inst)
+{
+    bool previousCirCheckParameters = cirCheckParameters;
+    bool retval;
+    cirCheckParameters = false;
+    retval = addInstParameters(inst);
+    cirCheckParameters = previousCirCheckParameters;
+    return retval;
+}
+
 /*--------------------------------------------------------------------------------------------------
   Skip the next identifier.  Return false if the next token is not an identifier.
 --------------------------------------------------------------------------------------------------*/
@@ -516,6 +566,23 @@ static utSym findSubCircuitSym(void)
     return sym;
 }
 
+static bool executeUndefinedInstance(utSym name, utSym internalNetlistSym)
+{
+    dbNetlist internalNetlist;
+    dbInst inst;
+
+    internalNetlist = dbNetlistCreate(cirCurrentDesign, internalNetlistSym, DB_UNDEFINED_NETLIST, utSymNull);
+    inst = dbInstCreate(cirCurrentNetlist, name, internalNetlist);
+
+    if(!addUndefinedInstPorts(inst)) {
+        return false;
+    }
+    if(!addUndefinedInstParameters(inst)) {
+        return false;
+    }
+    return true;
+}
+
 /*--------------------------------------------------------------------------------------------------
   Create an instance from the X statment.
   HSPICE example: XX3 N2 slave CKI CLKN passtrans P=.6u N=.3u
@@ -543,9 +610,7 @@ static bool executeInstance(void)
             }
         }
         if(internalNetlist == dbNetlistNull) {
-            /*cirError("Unable to find subcircuit '%s'", utSymGetName(internalNetlistSym));*/
-            internalNetlist = dbNetlistCreate(cirCurrentDesign, internalNetlistSym, DB_UNDEFINED, utSymNull);
-            return false;
+            return executeUndefinedInstance(name, internalNetlistSym);
         }
     } else {
         cirError("Unable to parse instance name");
@@ -576,6 +641,33 @@ static dbMport buildMport(
 }
 
 /*--------------------------------------------------------------------------------------------------
+  Rename a mport with the given name. Create associated flag and net.
+--------------------------------------------------------------------------------------------------*/
+static dbMport rebuildMport(
+    utSym name,
+    uint32 portIndex)
+{
+    dbMport mport;
+    dbInst flag;
+    dbNet net;
+    char dummyPortName[1024];
+
+    sprintf(dummyPortName, "<dummy%d>", portIndex);
+
+    mport = dbNetlistFindMport(cirCurrentNetlist, utSymCreate(dummyPortName));
+    dbMportSetSym(mport, name);
+    dbMportSetType(mport, DB_PAS);
+
+    flag = dbFlagInstCreate(mport);
+    net = findOrCreateNet(name);
+
+    dbNetInsertPort(net, dbInstGetFirstPort(flag));
+    return mport;
+}
+
+
+
+/*--------------------------------------------------------------------------------------------------
   Build mports on the current netlist.  Stop at the first parameter.
 --------------------------------------------------------------------------------------------------*/
 static bool buildMports(void)
@@ -597,6 +689,46 @@ static bool buildMports(void)
     if(c == '\0' || c == '=') {
         if(lastNetName != utSymNull) {
             buildMport(lastNetName);
+            if(c == '=') {
+                /* Put the identifier back so it can be read as an attribute name */
+                cirLinePosition = lastIdentifierPosition;
+            }
+        }
+    } else {
+        cirError("Unexpected character '%c'", c);
+        return false;
+    }
+    return true;
+}
+
+/*--------------------------------------------------------------------------------------------------
+  Build mports on the current netlist.  Stop at the first parameter.
+  supposing the current netlist has a previous definition DB_UNDEFINED_NETLIST
+  so all Mports are named <dummy%d> waiting for there final names
+  There was no previous net associated
+--------------------------------------------------------------------------------------------------*/
+static bool rebuildMports(void)
+{
+    utSym netName, lastNetName = utSymNull;
+    char c;
+    uint32 lastIdentifierPosition;
+    uint32 index = 1;
+
+    utDo {
+        lastIdentifierPosition = cirLinePosition;
+        netName = readNodeName();
+        c = cirPeekChar();
+    } utWhile(netName != utSymNull && c != '=') {
+        if(lastNetName != utSymNull) {
+            rebuildMport(lastNetName, index);
+            index++;
+        }
+        lastNetName = netName;
+    } utRepeat;
+    if(c == '\0' || c == '=') {
+        if(lastNetName != utSymNull) {
+            rebuildMport(lastNetName, index);
+            index++;
             if(c == '=') {
                 /* Put the identifier back so it can be read as an attribute name */
                 cirLinePosition = lastIdentifierPosition;
@@ -645,6 +777,7 @@ static bool addNetlistParameters(void)
 --------------------------------------------------------------------------------------------------*/
 static bool executeSubckt(void)
 {
+    dbNetlistType netlistType;
     utSym netlistName = readIdentifier();
 
     if(netlistName == utSymNull) {
@@ -652,22 +785,33 @@ static bool executeSubckt(void)
     }
     cirCurrentNetlist = dbDesignFindNetlist(cirCurrentDesign, netlistName);
     if(cirCurrentNetlist != dbNetlistNull) {
-        if(dbNetlistGetType(cirCurrentNetlist) == DB_SUBCIRCUIT) {
-            cirError("Redefinition of sub-circuit %s -- using old circuit",
+        netlistType = dbNetlistGetType(cirCurrentNetlist);
+
+        switch(netlistType) {
+
+        case DB_SUBCIRCUIT:
+            utWarning("Redefinition of sub-circuit %s -- using old circuit",
                 utSymGetName(netlistName));
             /* Skip to next sub-circuit */
             cirSkipSubcircuit = true;
             return true;
-        } 
-        dbNetlistSetType(cirCurrentNetlist, DB_SUBCIRCUIT);
-    } else {
-        cirCurrentNetlist = dbNetlistCreate(cirCurrentDesign, netlistName, DB_SUBCIRCUIT, utSymNull);
+
+        case DB_UNDEFINED_NETLIST:
+            dbNetlistSetType(cirCurrentNetlist, DB_SUBCIRCUIT);
+            return rebuildMports() && addNetlistParameters();
+
+        default:
+            cirError("Unknown circuit type for circuit %s, skipping definition",
+                utSymGetName(netlistName));
+            cirSkipSubcircuit = true;
+            return true;
+        }
     }
 
-    if(!buildMports()) {
-        return false;
-    }
-    return addNetlistParameters();
+    /* no previous definition */
+    cirCurrentNetlist = dbNetlistCreate(cirCurrentDesign, netlistName, DB_SUBCIRCUIT, utSymNull);
+
+    return buildMports() && addNetlistParameters();
 }
 
 /*--------------------------------------------------------------------------------------------------
@@ -735,10 +879,10 @@ static bool executeDirective(void)
         return executeGlobal();
     } else if(directive == cirConnectSym) {
         return executeConnect();
-    } else {
-        cirError("Directive %s is currently unsupported", utSymGetName(directive));
     }
-    return false;
+    utWarning("Directive %s is currently unsupported, skipped", utSymGetName(directive));
+    cirLine[cirLinePosition] = '\0';
+    return true;
 }
 
 /*--------------------------------------------------------------------------------------------------
@@ -934,13 +1078,14 @@ static bool readSpice(void)
 
     skipLine(); /* The first line is a comment */
     while(readLine()) {
+        utDebug("spice line: %s\n", cirLine);
         if(!executeLine()) {
             return false;
         }
     }
 
     dbForeachDesignNetlist(cirCurrentDesign, netlist) {
-        if(dbNetlistGetType(netlist) == DB_UNDEFINED) {
+        if(dbNetlistGetType(netlist) == DB_UNDEFINED_NETLIST) {
             utWarning("Undefined subcircuit %s", utSymGetName(dbNetlistGetSym(netlist)));
         }
     } dbEndDesignNetlist;
@@ -956,18 +1101,21 @@ dbDesign cirReadDesign(
     char *fileName,
     dbDesign libDesign)
 {
+    bool readSpiceResult = false;
     dbDesign design = dbDesignNull;
     utSym designSym = utSymCreate(designName);
+    dbDevspec devspec = dbFindCurrentDevspec();
 
     utLogMessage("Reading SPICE file %s", fileName);
     cirFileName = utNewA(char, strlen(fileName) + 1);
-    cirMaxLineLength = 42;
+    cirMaxLineLength = 80;
     cirCheckParameters = true;
     cirCurrentLibrary = libDesign;
     cirLine = utNewA(char, cirMaxLineLength);
     strcpy(cirFileName, fileName);
     initKeywords();
     cirSkipSubcircuit = false;
+    dollarAsComment = dbDevspecDollarAsComment(devspec);
     if(!utSetjmp()) {
         cirStart(dbDesignNull, dbSpiceTarget);
         if(!cirBuildDevices()) {
@@ -985,6 +1133,28 @@ dbDesign cirReadDesign(
                 cirLineNum = 0;
                 cirCurrentNetlist = dbNetlistNull;
                 cirLastNetlist = dbNetlistNull;
+<<<<<<< .mine
+
+               
+                readSpiceResult = readSpice();
+
+                if(readSpiceResult || cirLastNetlist == dbNetlistNull) {
+
+                    /* TODO: shall we make this optional? */
+                    freeUnusedDeviceNetlists();
+
+                    design = cirCurrentDesign;
+                    dbDesignSetRootNetlist(design, cirLastNetlist);
+                } else {
+                    if(readSpiceResult == false) {
+                        utWarning("Unsuccessful SPICE parsing");
+                    }
+                    if(cirLastNetlist == dbNetlistNull) {
+                        utWarning("Last .SUBCKT not empty");
+                    }
+                    dbDesignDestroy(cirCurrentDesign);
+                }
+=======
                 if(readSpice() || cirLastNetlist == dbNetlistNull) {
                     freeUnusedDeviceNetlists();
                     design = cirCurrentDesign;
@@ -992,6 +1162,7 @@ dbDesign cirReadDesign(
                 } else {
                     dbDesignDestroy(cirCurrentDesign);
                 }
+>>>>>>> .r13
             }
         }
     }
