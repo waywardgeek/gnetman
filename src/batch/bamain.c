@@ -143,7 +143,7 @@ static uint32 processArguments(
             xArg++;
             if(xArg < argc) {
                 dbCurrentDesign = schReadSchematic(utReplaceSuffix(argv[xArg], ""), argv[xArg],
-                    dbCurrentLibrary);
+                    dbDesignNull);
 		dbRootSetCurrentDesign(dbTheRoot, dbCurrentDesign);
                 if(dbCurrentDesign == dbDesignNull) {
                     utError("Errors reading schematic %s, exiting...", argv[xArg]);
@@ -162,7 +162,7 @@ static uint32 processArguments(
             xArg++;
             if(xArg < argc) {
                 dbCurrentDesign = schReadSchematic(utReplaceSuffix(argv[xArg], ""), argv[xArg],
-                    dbCurrentLibrary);
+                    dbDesignNull);
 		dbRootSetCurrentDesign(dbTheRoot, dbCurrentDesign);
                 if(dbCurrentDesign == dbDesignNull) {
                     utError("Errors reading schematic %s, exiting...", argv[xArg]);
@@ -179,7 +179,7 @@ static uint32 processArguments(
             xArg++;
             if(xArg < argc) {
                 dbCurrentDesign = schReadSchematic(utReplaceSuffix(argv[xArg], ""), argv[xArg],
-                    dbCurrentLibrary);
+                    dbDesignNull);
 		dbRootSetCurrentDesign(dbTheRoot, dbCurrentDesign);
                 if(dbCurrentDesign == dbDesignNull) {
                     utError("Errors reading schematic %s, exiting...", argv[xArg]);

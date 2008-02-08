@@ -305,7 +305,8 @@ void cirError(
     va_start(ap, format);
     buff = utVsprintf(format, ap);
     va_end(ap);
-    utWarning("Error in file %s on line %u: %s", cirFileName, cirLineNum, buff);
+    /* change to a format that most editor will recognize if gnetman is used in a makefile */
+    utWarning("%s:%u: %s", cirFileName, cirLineNum, buff);
 }
 
 /*--------------------------------------------------------------------------------------------------
@@ -316,7 +317,6 @@ static dbNet findOrCreateNet(
     utSym netName)
 {
     dbNet net = dbNetlistFindNet(cirCurrentNetlist, netName);
-    dbGlobal global;
 
     if(net != dbNetNull) {
         return net;
@@ -790,7 +790,7 @@ static bool executeSubckt(void)
         switch(netlistType) {
 
         case DB_SUBCIRCUIT:
-            utWarning("Redefinition of sub-circuit %s -- using old circuit",
+            cirError("Redefinition of sub-circuit %s -- using old circuit",
                 utSymGetName(netlistName));
             /* Skip to next sub-circuit */
             cirSkipSubcircuit = true;
@@ -880,7 +880,7 @@ static bool executeDirective(void)
     } else if(directive == cirConnectSym) {
         return executeConnect();
     }
-    utWarning("Directive %s is currently unsupported, skipped", utSymGetName(directive));
+    cirError("Directive %s is currently unsupported, skipped", utSymGetName(directive));
     cirLine[cirLinePosition] = '\0';
     return true;
 }
@@ -1078,7 +1078,7 @@ static bool readSpice(void)
 
     skipLine(); /* The first line is a comment */
     while(readLine()) {
-        utDebug("spice line: %s\n", cirLine);
+        /*utDebug("%s:%d: %s\n", cirFileName, cirLineNum, cirLine);*/
         if(!executeLine()) {
             return false;
         }
@@ -1086,7 +1086,7 @@ static bool readSpice(void)
 
     dbForeachDesignNetlist(cirCurrentDesign, netlist) {
         if(dbNetlistGetType(netlist) == DB_UNDEFINED_NETLIST) {
-            utWarning("Undefined subcircuit %s", utSymGetName(dbNetlistGetSym(netlist)));
+            cirError("Undefined subcircuit %s", utSymGetName(dbNetlistGetSym(netlist)));
         }
     } dbEndDesignNetlist;
 
@@ -1133,7 +1133,6 @@ dbDesign cirReadDesign(
                 cirLineNum = 0;
                 cirCurrentNetlist = dbNetlistNull;
                 cirLastNetlist = dbNetlistNull;
-<<<<<<< .mine
 
                
                 readSpiceResult = readSpice();
@@ -1147,22 +1146,13 @@ dbDesign cirReadDesign(
                     dbDesignSetRootNetlist(design, cirLastNetlist);
                 } else {
                     if(readSpiceResult == false) {
-                        utWarning("Unsuccessful SPICE parsing");
+                        cirError("Unsuccessful SPICE parsing");
                     }
                     if(cirLastNetlist == dbNetlistNull) {
-                        utWarning("Last .SUBCKT not empty");
+                        cirError("Last .SUBCKT not empty");
                     }
                     dbDesignDestroy(cirCurrentDesign);
                 }
-=======
-                if(readSpice() || cirLastNetlist == dbNetlistNull) {
-                    freeUnusedDeviceNetlists();
-                    design = cirCurrentDesign;
-                    dbDesignSetRootNetlist(design, cirLastNetlist);
-                } else {
-                    dbDesignDestroy(cirCurrentDesign);
-                }
->>>>>>> .r13
             }
         }
     }

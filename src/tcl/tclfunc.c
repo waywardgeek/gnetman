@@ -38,7 +38,7 @@ int set_current_library(
         utWarning("set_current_library: Unable to locate library %s in the database", libraryName);
         return 0;
     }
-    dbCurrentLibrary = design;
+    dbRootSetCurrentLibrary(dbTheRoot, design);
     return 1;
 }
 
@@ -343,7 +343,8 @@ int read_netlist(
     char *fileName)
 {
     dbNetlistFormat netlistFormat = dbFindNetlistFormat(format);
-    dbDesign  dbCurrentDesign = dbDesignNull;
+    dbDesign dbCurrentDesign = dbDesignNull;
+    dbDesign dbCurrentLibrary = dbRootGetCurrentLibrary(dbTheRoot);
 
     if(netlistFormat == DB_NOFORMAT) {
         utWarning("Unknown input format specified: %s", format);
@@ -387,6 +388,7 @@ int read_library(
     char *fileName)
 {
     dbNetlistFormat netlistFormat = dbFindNetlistFormat(format);
+    dbDesign dbCurrentLibrary = dbRootGetCurrentLibrary(dbTheRoot);
 
     if(netlistFormat == DB_NOFORMAT) {
         utWarning("Unknown input format specified: %s", format);
@@ -412,6 +414,7 @@ int read_library(
     if(dbCurrentLibrary == dbDesignNull) {
         return 0;
     }
+    dbRootSetCurrentLibrary(dbTheRoot, dbCurrentLibrary);
     return 1;
 }
 
