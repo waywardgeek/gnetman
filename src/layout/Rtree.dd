@@ -1,0 +1,56 @@
+module Rtree r
+
+class Box
+    int32 Left
+    int32 Bottom
+    int32 Right
+    int32 Top
+    bool Empty
+
+class Shape
+    Box Bbox
+
+class Node
+    Box Bbox
+
+class Space
+    Node Root
+    uint32 BucketMaxSize
+    uint32 BucketMinSize
+
+relationship Node:Parent Node:Child doubly_linked cascade
+relationship Node Shape doubly_linked
+relationship Space Shape:Containing doubly_linked mandatory
+
+// -----
+
+schema Partitioning
+
+class Group
+    Box Bbox
+
+class Vertex
+    int32 Weight
+
+class Partition
+    
+relationship Space Partition doubly_linked cascade
+relationship Group Node doubly_linked
+relationship Partition Group doubly_linked cascade
+relationship Partition Vertex doubly_linked cascade
+relationship Group:Parent1 Vertex:Child1 doubly_linked cascade
+relationship Group:Parent2 Vertex:Child2 doubly_linked cascade
+relationship Vertex Group:Group1 child_only
+relationship Vertex Group:Group2 child_only
+
+// -----
+
+schema Search
+
+class Selection
+
+class Item
+
+relationship Shape Item doubly_linked cascade
+relationship Selection Item doubly_linked cascade
+relationship Space Selection doubly_linked cascade
