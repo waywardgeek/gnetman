@@ -49,18 +49,18 @@ int set_current_netlist(
     char *netlistName)
 {
     dbNetlist netlist;
-    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
+    dbDesign design = dbRootGetCurrentDesign(dbTheRoot);
 
-    if(dbCurrentDesign == dbDesignNull) {
+    if(design == dbDesignNull) {
         utWarning("set_current_netlist: no current design in the database");
         return 0;
     }
-    netlist = dbDesignFindNetlist(dbCurrentDesign, utSymCreate(netlistName));
+    netlist = dbDesignFindNetlist(design, utSymCreate(netlistName));
     if(netlist == dbNetlistNull) {
         utWarning("set_current_netlist: Unable to locate netlist %s in the database", netlistName);
         return 0;
     }
-    dbCurrentNetlist = netlist;
+    dbRootSetCurrentNetlist(dbTheRoot, netlist);
     return 1;
 }
 
@@ -71,19 +71,18 @@ int set_root_netlist(
     char *netlistName)
 {
     dbNetlist netlist;
-    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
+    dbDesign design = dbRootGetCurrentDesign(dbTheRoot);
 
-    if(dbCurrentDesign == dbDesignNull) {
+    if(design == dbDesignNull) {
         utWarning("set_root_netlist: no current design in the database");
         return 0;
     }
-    netlist = dbDesignFindNetlist(dbCurrentDesign, utSymCreate(netlistName));
+    netlist = dbDesignFindNetlist(design, utSymCreate(netlistName));
     if(netlist == dbNetlistNull) {
         utWarning("set_root_netlist: Unable to locate netlist %s in the database", netlistName);
         return 0;
     }
-    dbDesignSetRootNetlist(dbCurrentDesign, netlist);
-    dbCurrentNetlist = netlist;
+    dbDesignSetRootNetlist(design, netlist);
     return 1;
 }
 
@@ -137,12 +136,12 @@ void merge_net_into_net(
 --------------------------------------------------------------------------------------------------*/
 char *get_current_design(void)
 {
-    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
-    if(dbCurrentDesign == dbDesignNull) {
+    dbDesign design = dbRootGetCurrentDesign(dbTheRoot);
+    if(design == dbDesignNull) {
         utWarning("get_current_design: no current design in the database");
         return "";
     }
-    return dbDesignGetName(dbCurrentDesign);
+    return dbDesignGetName(design);
 }
 
 /*--------------------------------------------------------------------------------------------------
@@ -208,7 +207,7 @@ void set_spice_target(
             spiceType);
         return;
     }
-    dbSpiceTarget = target;
+    dbRootSetSpiceTarget(dbTheRoot, target);
 }
 
 /*--------------------------------------------------------------------------------------------------
@@ -283,7 +282,7 @@ int create_default_symbol(
 void set_include_top_level_ports(
     int value)
 {
-    dbIncludeTopLevelPorts = value;
+    dbRootSetIncludeTopLevelPorts(dbTheRoot, value);
 }
 
 /*--------------------------------------------------------------------------------------------------
@@ -292,7 +291,7 @@ void set_include_top_level_ports(
 void set_max_line_length(
     int value)
 {
-    dbMaxLineLength  = value;
+    dbRootSetMaxLineLength(dbTheRoot, value);
 }
 
 /*--------------------------------------------------------------------------------------------------
@@ -304,9 +303,9 @@ int write_netlist(
 {
     dbNetlistFormat netlistFormat = dbFindNetlistFormat(format);
     bool passed = true;
-    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
+    dbDesign design = dbRootGetCurrentDesign(dbTheRoot);
 
-    if(dbCurrentDesign == dbDesignNull) {
+    if(design == dbDesignNull) {
         utWarning("write_spice_netlist: No current design in the database");
         return 0;
     }
@@ -316,14 +315,14 @@ int write_netlist(
     }
     switch(netlistFormat) {
     case DB_VERILOG:
-        passed = vrWriteDesign(dbCurrentDesign, fileName, false);
+        passed = vrWriteDesign(design, fileName, false);
         break;
     case DB_SPICE:
-        passed = cirWriteDesign(dbCurrentDesign, fileName, dbIncludeTopLevelPorts,
+        passed = cirWriteDesign(design, fileName, dbIncludeTopLevelPorts,
             dbMaxLineLength, false);
         break;
     case DB_PCB:
-        passed = pcbWriteDesign(dbCurrentDesign, fileName);
+        passed = pcbWriteDesign(design, fileName);
         break;
     default:
         utExit("Unknown netlist format");
@@ -343,7 +342,7 @@ int read_netlist(
     char *fileName)
 {
     dbNetlistFormat netlistFormat = dbFindNetlistFormat(format);
-    dbDesign dbCurrentDesign = dbDesignNull;
+    dbDesign design = dbDesignNull;
     dbDesign dbCurrentLibrary = dbRootGetCurrentLibrary(dbTheRoot);
 
     if(netlistFormat == DB_NOFORMAT) {
@@ -356,25 +355,24 @@ int read_netlist(
     }
     switch(netlistFormat) {
     case DB_VERILOG:
-        dbCurrentDesign = vrReadDesign(designName, fileName, dbCurrentLibrary);
+        design = vrReadDesign(designName, fileName, dbCurrentLibrary);
         break;
     case DB_SPICE:
-        dbCurrentDesign = cirReadDesign(designName, fileName, dbCurrentLibrary);
+        design = cirReadDesign(designName, fileName, dbCurrentLibrary);
         break;
     case DB_SCHEMATIC:
-        dbCurrentDesign = schReadSchematic(designName, fileName, dbCurrentLibrary);
+        design = schReadSchematic(designName, fileName, dbCurrentLibrary);
         break;
     case DB_PCB:
-        dbCurrentDesign = pcbReadDesign(designName, fileName, dbCurrentLibrary);
+        design = pcbReadDesign(designName, fileName, dbCurrentLibrary);
         break;
     default:
         utExit("Unknown netlist format");
     }
-    if(dbCurrentDesign == dbDesignNull) {
+    if(design == dbDesignNull) {
         return 0;
     }
-    dbCurrentNetlist = dbDesignGetRootNetlist(dbCurrentDesign);
-    dbRootSetCurrentNetlist(dbTheRoot, dbCurrentNetlist);
+    dbRootSetCurrentNetlist(dbTheRoot, dbDesignGetRootNetlist(design));
     return 1;
 }
 
@@ -427,9 +425,9 @@ int write_library(
 {
     dbNetlistFormat netlistFormat = dbFindNetlistFormat(format);
     bool passed = true;
-    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
+    dbDesign design = dbRootGetCurrentDesign(dbTheRoot);
 
-    if(dbCurrentDesign == dbDesignNull) {
+    if(design == dbDesignNull) {
         utWarning("write_spice_netlist: No current design in the database");
         return 0;
     }
@@ -439,10 +437,10 @@ int write_library(
     }
     switch(netlistFormat) {
     case DB_VERILOG:
-        passed = vrWriteDesign(dbCurrentDesign, fileName, true);
+        passed = vrWriteDesign(design, fileName, true);
         break;
     case DB_SPICE:
-        passed = cirWriteDesign(dbCurrentDesign, fileName, dbIncludeTopLevelPorts,
+        passed = cirWriteDesign(design, fileName, dbIncludeTopLevelPorts,
             dbMaxLineLength, true);
         break;
     default:
@@ -459,9 +457,9 @@ int write_library(
 --------------------------------------------------------------------------------------------------*/
 int generate_devices(void)
 {
-    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
+    dbDesign design = dbRootGetCurrentDesign(dbTheRoot);
 
-    if(dbCurrentDesign == dbDesignNull) {
+    if(design == dbDesignNull) {
         utWarning("genereate_devices: No design present in database");
         return  0;
     }
@@ -476,12 +474,12 @@ int generate_devices(void)
 --------------------------------------------------------------------------------------------------*/
 void convert_power_insts_to_globals(void)
 {
-    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
+    dbDesign design = dbRootGetCurrentDesign(dbTheRoot);
 
-    if(dbCurrentDesign == dbDesignNull) {
+    if(design == dbDesignNull) {
         utWarning("convert_power_insts_to_globals: no current design");
     } else {
-        dbDesignConvertPowerInstsToGlobals(dbCurrentDesign);
+        dbDesignConvertPowerInstsToGlobals(design);
     }
 }
 
@@ -494,12 +492,12 @@ void thread_global_through_hierarchy(
     int createTopLevelPorts)
 {
     dbGlobal global;
-    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
+    dbDesign design = dbRootGetCurrentDesign(dbTheRoot);
 
-    if(dbCurrentDesign == dbDesignNull) {
+    if(design == dbDesignNull) {
         utWarning("thread_global_through_hierarchy: no current design");
     } else {
-        global = dbDesignFindGlobal(dbCurrentDesign, utSymCreate(globalName));
+        global = dbDesignFindGlobal(design, utSymCreate(globalName));
         if(global == dbGlobalNull) {
             utWarning("thread_globals_through_hierarchy: no global '%s' found in design",
                 globalName);
@@ -516,12 +514,12 @@ void thread_global_through_hierarchy(
 void thread_globals_through_hierarchy(
     int createTopLevelPorts)
 {
-    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
+    dbDesign design = dbRootGetCurrentDesign(dbTheRoot);
 
-    if(dbCurrentDesign == dbDesignNull) {
+    if(design == dbDesignNull) {
         utWarning("thread_globals_through_hierarchy: no current design");
     } else {
-        dbThreadGlobalsThroughHierarchy(dbCurrentDesign, createTopLevelPorts);
+        dbThreadGlobalsThroughHierarchy(design, createTopLevelPorts);
     }
 }
 
@@ -533,12 +531,12 @@ void rename_global(
     char *newGlobalName)
 {
     dbGlobal global;
-    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
+    dbDesign design = dbRootGetCurrentDesign(dbTheRoot);
 
-    if(dbCurrentDesign == dbDesignNull) {
+    if(design == dbDesignNull) {
         utWarning("rename_global: no current design");
     } else {
-        global = dbDesignFindGlobal(dbCurrentDesign, utSymCreate(globalName));
+        global = dbDesignFindGlobal(design, utSymCreate(globalName));
         if(global == dbGlobalNull) {
             utWarning("rename_global: no global named %s in current design", globalName);
         } else {
@@ -555,12 +553,12 @@ void rename_netlist(
     char *newNetlistName)
 {
     dbNetlist netlist;
-    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
+    dbDesign design = dbRootGetCurrentDesign(dbTheRoot);
 
-    if(dbCurrentDesign == dbDesignNull) {
+    if(design == dbDesignNull) {
         utWarning("rename_netlist: no current design");
     } else {
-        netlist = dbDesignFindNetlist(dbCurrentDesign, utSymCreate(netlistName));
+        netlist = dbDesignFindNetlist(design, utSymCreate(netlistName));
         if(netlist == dbNetlistNull) {
             utWarning("rename_netlist: no netlist named %s in current design", netlistName);
         } else {
@@ -594,12 +592,12 @@ void set_netlist_value(
     char *value)
 {
     dbNetlist netlist;
-    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
+    dbDesign design = dbRootGetCurrentDesign(dbTheRoot);
 
-    if(dbCurrentDesign == dbDesignNull) {
+    if(design == dbDesignNull) {
         utWarning("set_netlist_value: no current design");
     } else {
-        netlist = dbDesignFindNetlist(dbCurrentDesign, utSymCreate(netlistName));
+        netlist = dbDesignFindNetlist(design, utSymCreate(netlistName));
         if(netlist == dbNetlistNull) {
             utWarning("set_netlist_value: no netlist named %s in current design", netlistName);
         } else {
@@ -617,13 +615,13 @@ char *get_netlist_value(
 {
     dbNetlist netlist;
     utSym value;
-    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
+    dbDesign design = dbRootGetCurrentDesign(dbTheRoot);
 
-    if(dbCurrentDesign == dbDesignNull) {
+    if(design == dbDesignNull) {
         utWarning("get_netlist_value: no current design");
         return "";
     }
-    netlist = dbDesignFindNetlist(dbCurrentDesign, utSymCreate(netlistName));
+    netlist = dbDesignFindNetlist(design, utSymCreate(netlistName));
     if(netlist == dbNetlistNull) {
         utWarning("get_netlist_value: no netlist named %s in current design", netlistName);
         return "";
@@ -644,9 +642,9 @@ void set_inst_value(
     char *value)
 {
     dbInst inst;
-    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
+    dbDesign design = dbRootGetCurrentDesign(dbTheRoot);
 
-    if(dbCurrentDesign == dbDesignNull) {
+    if(design == dbDesignNull) {
         utWarning("set_inst_value: no current design");
         return;
     }
@@ -671,9 +669,9 @@ char *get_inst_value(
 {
     dbInst inst;
     utSym value;
-    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
+    dbDesign design = dbRootGetCurrentDesign(dbTheRoot);
 
-    if(dbCurrentDesign == dbDesignNull) {
+    if(design == dbDesignNull) {
         utWarning("get_inst_value: no current design");
         return "";
     }
@@ -702,9 +700,9 @@ void set_net_value(
     char *value)
 {
     dbNet net;
-    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
+    dbDesign design = dbRootGetCurrentDesign(dbTheRoot);
 
-    if(dbCurrentDesign == dbDesignNull) {
+    if(design == dbDesignNull) {
         utWarning("set_net_value: no current design");
         return;
     }
@@ -729,9 +727,9 @@ char *get_net_value(
 {
     dbNet net;
     utSym value;
-    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
+    dbDesign design = dbRootGetCurrentDesign(dbTheRoot);
 
-    if(dbCurrentDesign == dbDesignNull) {
+    if(design == dbDesignNull) {
         utWarning("get_net_value: no current design");
         return "";
     }
@@ -756,13 +754,13 @@ char *get_net_value(
 --------------------------------------------------------------------------------------------------*/
 void explode_instance_arrays(void)
 {
-    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
+    dbDesign design = dbRootGetCurrentDesign(dbTheRoot);
 
-    if(dbCurrentDesign == dbDesignNull) {
+    if(design == dbDesignNull) {
         utWarning("explode_instance_arrays: no current design");
         return;
     }
-    dbDesignExplodeArrayInsts(dbCurrentDesign);
+    dbDesignExplodeArrayInsts(design);
 }
 
 /*--------------------------------------------------------------------------------------------------
@@ -859,13 +857,13 @@ char *get_next_net(
 char *get_first_netlist(void)
 {
     dbNetlist netlist;
-    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
+    dbDesign design = dbRootGetCurrentDesign(dbTheRoot);
 
-    if(dbCurrentDesign == dbDesignNull) {
+    if(design == dbDesignNull) {
         utWarning("get_first_netlist: no current design in the database");
         return "";
     }
-    dbForeachDesignNetlist(dbCurrentDesign, netlist) {
+    dbForeachDesignNetlist(design, netlist) {
         if(dbNetlistGetType(netlist) == DB_SUBCIRCUIT) {
             return dbNetlistGetName(netlist);
         }
@@ -880,13 +878,13 @@ char *get_next_netlist(
     char *netlistName)
 {
     dbNetlist netlist;
-    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
+    dbDesign design = dbRootGetCurrentDesign(dbTheRoot);
 
-    if(dbCurrentDesign == dbDesignNull) {
+    if(design == dbDesignNull) {
         utWarning("get_next_netlist: no current design in the database");
         return "";
     }
-    netlist = dbDesignFindNetlist(dbCurrentDesign, utSymCreate(netlistName));
+    netlist = dbDesignFindNetlist(design, utSymCreate(netlistName));
     if(netlist == dbNetlistNull) {
         utWarning("get_next_netlist: no netlist named %s in the database", netlistName);
         return "";
@@ -955,8 +953,8 @@ void report_port_sums(
     char *pinType,
     char *expression)
 {
-    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
-    atReportDesignSums(dbCurrentDesign, utSymCreate(deviceType), utSymCreate(pinType), expression);
+    dbDesign design = dbRootGetCurrentDesign(dbTheRoot);
+    atReportDesignSums(design, utSymCreate(deviceType), utSymCreate(pinType), expression);
 }
 
 /*--------------------------------------------------------------------------------------------------
@@ -968,8 +966,8 @@ void report_portlist_sums(
     char *pinList,
     char *expression)
 {
-    dbDesign  dbCurrentDesign = dbRootGetCurrentDesign(dbTheRoot);
-    atReportDesignSumsOverPins(dbCurrentDesign, expression, pinList);
+    dbDesign design = dbRootGetCurrentDesign(dbTheRoot);
+    atReportDesignSumsOverPins(design, expression, pinList);
 }
 
 /*--------------------------------------------------------------------------------------------------
@@ -979,7 +977,7 @@ void report_portlist_sums(
 void set_library_wins(
     int value)
 {
-    dbLibraryWins = value? true : false;
+    dbRootSetLibraryWins(dbTheRoot, value? true : false);
 }
 
 /*--------------------------------------------------------------------------------------------------

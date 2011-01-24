@@ -115,8 +115,8 @@ static uint32 processArguments(
 
     baInteractive = false;
     baNoInit = false;
-    dbMaxLineLength = 80;
-    dbIncludeTopLevelPorts = true;
+    dbRootSetMaxLineLength(dbTheRoot, 80);
+    dbRootSetIncludeTopLevelPorts(dbTheRoot, true);
     for(xArg = 1; xArg < argc && argv[xArg][0] == '-'; xArg++) {
         optionPtr = argv[xArg] + 1;
         switch(*optionPtr) {
@@ -148,7 +148,7 @@ static uint32 processArguments(
                 if(dbCurrentDesign == dbDesignNull) {
                     utError("Errors reading schematic %s, exiting...", argv[xArg]);
                 }
-                dbIncludeTopLevelPorts = *optionPtr == 'C';
+                dbRootSetIncludeTopLevelPorts(dbTheRoot, *optionPtr == 'C');
                 if(!cirWriteDesign(dbCurrentDesign, utReplaceSuffix(argv[xArg], ".cir"),
                         dbIncludeTopLevelPorts, dbMaxLineLength, false)) {
                     utError("Errors writing spice netlist, exiting...");
@@ -211,7 +211,7 @@ static uint32 processArguments(
             case 't':
                 xArg++;
                 if(xArg < argc) {
-                    dbSpiceTarget = dbFindSpiceTargetFromName(argv[xArg]);
+                    dbRootSetSpiceTarget(dbTheRoot, dbFindSpiceTargetFromName(argv[xArg]));
                     if(dbSpiceTarget == DB_NULL_SPICE_TYPE) {
                         usage("Unrecognized spice type '%s'", argv[xArg]);
                     }
@@ -222,7 +222,7 @@ static uint32 processArguments(
             case 'l':
                 xArg++;
                 if(xArg < argc) {
-                    dbMaxLineLength = atoi(argv[xArg]);
+                    dbRootSetMaxLineLength(dbTheRoot, atoi(argv[xArg]));
                 } else {
                     usage("Expecting line length after '-%s'", optionPtr);
                 }
@@ -346,6 +346,7 @@ int main(
         return 1;
     }
     utSetStatusCallback(batchStatus);
+    baStart();
     if(utSetjmp()) {
         utWarning("Exiting due to errors");
         utFree(baExecutableName);
@@ -353,7 +354,6 @@ int main(
         utStop(true);
         return 1;
     }
-    baStart();
     baRcFileName = findRcFileArgument(argc, argv);
     xArg = processArguments(argc, argv, &didSomething);
     if(!baNoInit) {

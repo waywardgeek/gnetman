@@ -807,7 +807,6 @@ static bool executeSubckt(void)
             return true;
         }
     }
-
     /* no previous definition */
     cirCurrentNetlist = dbNetlistCreate(cirCurrentDesign, netlistName, DB_SUBCIRCUIT, utSymNull);
 
@@ -1083,13 +1082,11 @@ static bool readSpice(void)
             return false;
         }
     }
-
     dbForeachDesignNetlist(cirCurrentDesign, netlist) {
         if(dbNetlistGetType(netlist) == DB_UNDEFINED_NETLIST) {
             cirError("Undefined subcircuit %s", utSymGetName(dbNetlistGetSym(netlist)));
         }
     } dbEndDesignNetlist;
-
     return true;
 }
 

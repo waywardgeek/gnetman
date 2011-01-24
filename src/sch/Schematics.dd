@@ -114,8 +114,6 @@ class Bus
     uint32 Right
     db:Bus DbBus
 
-class Col
-
 // Net relationships
 relationship Net Wire linked_list cascade
 relationship Net Pin tail_linked
@@ -137,7 +135,6 @@ relationship Schem Net hashed mandatory
 relationship Schem Wire doubly_linked mandatory
 relationship Schem Bus hashed mandatory
 relationship Schem Attr cascade child_only
-relationship Schem Col array
 
 // Root relationships
 relationship Root Schem hashed mandatory
@@ -166,7 +163,3 @@ relationship Graphic Arc linked_list mandatory
 
 // Bus relationships
 relationship Bus Signal linked_list parent_only
-
-// Col relationships
-relationship Col Comp array
-
