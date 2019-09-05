@@ -13,6 +13,19 @@ generator, or LVS capability.  The gnetman database is designed for just
 such tool support.
 
 ---------------------------------------------------------------------------
+Copyright and license:  All originhal files in this project are licensed under
+the GPL 2.0 license.  See COPYING for details.  The copyright on all original
+files, as of Sept 5, 2019, belong to ViASIC, which has been bought by Triad
+Semiconductor, which now owns the copyright.
+
+The file src/include/tk.h is copyrighted according to the (permissive) license
+terms in src/include/tcl_license.terms.  The files src/sch/schtypes.h and
+src/sch/schcolors.h are copyrighted by Ales V. Hvezda, under the GNU Library
+General Public license, version 2.0.  Generated files by bison and flex are also
+licensed under LGPL.  The SWIG generated file src/tcl/tclfunc_wrap.c is
+copyrighted by under the TCL license terms in src/include/tcl_license.terms.
+---------------------------------------------------------------------------
+
 Using gnetman:
 
 The executable for gnetman is now in the bin directory.  To use gnetman,
